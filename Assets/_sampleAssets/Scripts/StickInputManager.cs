@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class StickInputManager : MonoBehaviour
 {
@@ -20,29 +18,34 @@ public class StickInputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-            myStickValue = OVRInput.Get(myStick);
+        myStickValue = OVRInput.Get(myStick);
 
-            if (myStickValue.x > 0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
-            {
-                //右方向
-                inputCommandTextmesh.text = "right";
-            }
-            if (myStickValue.x < -0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
-            {
-                //左方向
-                inputCommandTextmesh.text = "left";
-            }
-            if (myStickValue.y > 0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
-            {
-                //上方向
-                inputCommandTextmesh.text = "up";
-            }
-            if (myStickValue.y < -0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
-            {
-                //下方向
-                inputCommandTextmesh.text = "down";
-            }
+        if (myStickValue.x > 0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
+        {
+            //右方向
+            inputCommandTextmesh.text = "right";
+        }
+        else if (myStickValue.x < -0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
+        {
+            //左方向
+            inputCommandTextmesh.text = "left";
+        }
+        else if (myStickValue.y > 0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
+        {
+            //上方向
+            inputCommandTextmesh.text = "up";
+        }
+        else if (myStickValue.y < -0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
+        {
+            //下方向
+            inputCommandTextmesh.text = "down";
+        }
+        else
+        {
+            //四方向に該当しない場合
+            inputCommandTextmesh.text = "no direction";
+        }
 
-            stickValueTextmesh.text = myStickValue.ToString();
+        stickValueTextmesh.text = myStickValue.ToString();
     }
 }

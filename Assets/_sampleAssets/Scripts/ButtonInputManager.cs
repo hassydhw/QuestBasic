@@ -57,22 +57,22 @@ public class ButtonInputManager : MonoBehaviour
         if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger))
         {
             //右人差し指トリガーを押した際の処理
-            buttonDownText.text = "R_trigger pressed";
+            buttonDownText.text = "R_index pressed";
         }
         if (OVRInput.GetDown(OVRInput.RawButton.RHandTrigger))
         {
             //右中指トリガーを押した際の処理
-            buttonDownText.text = "R_palm pressed";
+            buttonDownText.text = "R_hand_trigger pressed";
         }
         if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger))
         {
             //左人差し指トリガーを押した際の処理
-            buttonDownText.text = "L_trigger pressed";
+            buttonDownText.text = "L_index pressed";
         }
         if (OVRInput.GetDown(OVRInput.RawButton.LHandTrigger))
         {
             //左中指トリガーを押した際の処理
-            buttonDownText.text = "L_palm pressed";
+            buttonDownText.text = "L_hand_trigger pressed";
         }
 
         if (OVRInput.GetDown(OVRInput.RawButton.LThumbstick))
