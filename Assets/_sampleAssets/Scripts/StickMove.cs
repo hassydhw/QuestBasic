@@ -7,6 +7,7 @@ public class StickMove : MonoBehaviour
 
     public float forwardSpeed;
     public float rotationSpeed;
+    Vector2 myStickValue;
 
 
     // Use this for initialization
@@ -24,21 +25,20 @@ public class StickMove : MonoBehaviour
         }
         else
         {
-            Vector2 touchPadPt = OVRInput.Get(OVRInput.RawAxis2D.RThumbstick);
-            if (touchPadPt.y > 0.5 && -0.5 < touchPadPt.x && touchPadPt.x < 0.5)
+            myStickValue = OVRInput.Get(OVRInput.RawAxis2D.RThumbstick);
+            if (myStickValue.y > 0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
             {
                 //上方向
                 ////前進
-                //moveTargetObj.transform.position += (rotationRefObj.transform.rotation * Vector3.forward).normalized * forwardSpeed * Time.deltaTime;
                 MoveForward();
             }
-            if (touchPadPt.x > 0.5 && -0.5 < touchPadPt.y && touchPadPt.y < 0.5)
+            if (myStickValue.x > 0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
             {
                 //右方向
                 //右回りに回転
                 moveTargetObj.transform.Rotate(0, rotationSpeed * Time.deltaTime, 0);
             }
-            if (touchPadPt.x < -0.5 && -0.5 < touchPadPt.y && touchPadPt.y < 0.5)
+            if (myStickValue.x < -0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
             {
                 //左方向
                 //左回りに回転
@@ -59,9 +59,6 @@ public class StickMove : MonoBehaviour
 
     private void MoveForward()
     {
-        //前進
-//        moveTargetObj.transform.position += (rotationRefObj.transform.rotation * Vector3.forward).normalized * forwardSpeed * Time.deltaTime;
-
         //移動にはy軸の回転だけを使う
         Vector3 HMDDir = rotationRefObj.transform.rotation.eulerAngles;
         Quaternion moveRotation = Quaternion.Euler(0, HMDDir.y, 0);

@@ -5,10 +5,10 @@ using UnityEngine;
 public class StickInputManager : MonoBehaviour
 {
     public OVRInput.RawAxis2D myStick;
-    public TextMesh dpadInputMesh;
-    public TextMesh padInfoMesh;
+    public TextMesh inputCommandTextmesh;
+    public TextMesh stickValueTextmesh;
 
-    Vector2 touchPadPt;
+    Vector2 myStickValue;
 
 
     // Use this for initialization
@@ -20,29 +20,29 @@ public class StickInputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-            Vector2 touchPadPt = OVRInput.Get(myStick);
+            myStickValue = OVRInput.Get(myStick);
 
-            if (touchPadPt.x > 0.5 && -0.5 < touchPadPt.y && touchPadPt.y < 0.5)
+            if (myStickValue.x > 0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
             {
                 //右方向
-                dpadInputMesh.text = "right";
+                inputCommandTextmesh.text = "right";
             }
-            if (touchPadPt.x < -0.5 && -0.5 < touchPadPt.y && touchPadPt.y < 0.5)
+            if (myStickValue.x < -0.5 && -0.5 < myStickValue.y && myStickValue.y < 0.5)
             {
                 //左方向
-                dpadInputMesh.text = "left";
+                inputCommandTextmesh.text = "left";
             }
-            if (touchPadPt.y > 0.5 && -0.5 < touchPadPt.x && touchPadPt.x < 0.5)
+            if (myStickValue.y > 0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
             {
                 //上方向
-                dpadInputMesh.text = "up";
+                inputCommandTextmesh.text = "up";
             }
-            if (touchPadPt.y < -0.5 && -0.5 < touchPadPt.x && touchPadPt.x < 0.5)
+            if (myStickValue.y < -0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
             {
                 //下方向
-                dpadInputMesh.text = "down";
+                inputCommandTextmesh.text = "down";
             }
 
-            padInfoMesh.text = touchPadPt.ToString();
+            stickValueTextmesh.text = myStickValue.ToString();
     }
 }

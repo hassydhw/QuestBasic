@@ -4,14 +4,14 @@ using UnityEngine;
 
 public class ControllerLineRenderer : MonoBehaviour
 {
-    public Transform rightHandAnchor = null;
+    public Transform rayTransform = null;
     public LineRenderer lineRenderer = null;
     public float maxRayDistance = 500.0f;
 
     void Update()
     {
         // 右手のコントローラの位置と向いている方向からRayを作成
-        Ray laserPointer = new Ray(rightHandAnchor.position, rightHandAnchor.forward);
+        Ray laserPointer = new Ray(rayTransform.position, rayTransform.forward);
 
         // 作成したRay上にColliderがあるか判定
         RaycastHit hit;

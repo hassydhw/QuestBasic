@@ -17,14 +17,14 @@ public class ButtonInputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        CheckInputDown();
-        CheckInput();
-        CheckTouchpad();
+        CheckButtonDown();
+        CheckButtonTouch();
+        CheckStickValue();
 
         Debug.Log(buttonDownText.text);
     }
 
-    private void CheckTouchpad()
+    private void CheckStickValue()
     {
         stickValueText.text = OVRInput.Get(OVRInput.RawAxis2D.LThumbstick).ToString()
         + "\n"
@@ -32,7 +32,7 @@ public class ButtonInputManager : MonoBehaviour
 
     }
 
-    private void CheckInputDown()
+    private void CheckButtonDown()
     {
         if (OVRInput.GetDown(OVRInput.RawButton.A))
         {
@@ -87,7 +87,7 @@ public class ButtonInputManager : MonoBehaviour
         }
     }
 
-    private void CheckInput()
+    private void CheckButtonTouch()
     {
         if (OVRInput.Get(OVRInput.RawTouch.A))
         {

@@ -236,7 +236,7 @@ GameObject:
   - component: {fileID: 505847066}
   - component: {fileID: 505847067}
   m_Layer: 0
-  m_Name: RightInput
+  m_Name: RightInputText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -269,8 +269,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myStick: 2
-  dpadInputMesh: {fileID: 1278527894}
-  padInfoMesh: {fileID: 999394952}
+  inputCommandTextmesh: {fileID: 1278527894}
+  stickValueTextmesh: {fileID: 999394952}
 --- !u!1 &779375443
 GameObject:
   m_ObjectHideFlags: 0
@@ -282,7 +282,7 @@ GameObject:
   - component: {fileID: 779375446}
   - component: {fileID: 779375445}
   m_Layer: 0
-  m_Name: DpadInputText
+  m_Name: InputCommandText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -368,7 +368,7 @@ GameObject:
   - component: {fileID: 999394953}
   - component: {fileID: 999394952}
   m_Layer: 0
-  m_Name: PadInputText
+  m_Name: StickValueText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -453,7 +453,7 @@ GameObject:
   - component: {fileID: 1162681909}
   - component: {fileID: 1162681910}
   m_Layer: 0
-  m_Name: LeftInput
+  m_Name: LeftInputText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -486,8 +486,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myStick: 1
-  dpadInputMesh: {fileID: 779375445}
-  padInfoMesh: {fileID: 1169472864}
+  inputCommandTextmesh: {fileID: 779375445}
+  stickValueTextmesh: {fileID: 1169472864}
 --- !u!1 &1169472862
 GameObject:
   m_ObjectHideFlags: 0
@@ -499,7 +499,7 @@ GameObject:
   - component: {fileID: 1169472865}
   - component: {fileID: 1169472864}
   m_Layer: 0
-  m_Name: PadInputText
+  m_Name: StickValueText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -585,7 +585,7 @@ GameObject:
   - component: {fileID: 1278527895}
   - component: {fileID: 1278527894}
   m_Layer: 0
-  m_Name: DpadInputText
+  m_Name: InputCommandText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
