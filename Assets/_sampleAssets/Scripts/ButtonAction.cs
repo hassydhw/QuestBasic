@@ -10,7 +10,6 @@ public class ButtonAction : MonoBehaviour
 
     public void OnClick()
     {
-        //     image.color = Color.red;
         buttonText.text = "clicked at" + Time.realtimeSinceStartup.ToString("f2");
     }
 }

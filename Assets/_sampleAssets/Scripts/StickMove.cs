@@ -21,6 +21,7 @@ public class StickMove : MonoBehaviour
     {
         if (OVRInput.Get(OVRInput.RawButton.RIndexTrigger))
         {
+            //トリガーで前進
             MoveForward();
         }
         else

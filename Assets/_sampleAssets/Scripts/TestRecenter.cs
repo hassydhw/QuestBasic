@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.XR;
 
 
+//RecenterはQuestでは動作しない？
+
 public class TestRecenter : MonoBehaviour
 {
 

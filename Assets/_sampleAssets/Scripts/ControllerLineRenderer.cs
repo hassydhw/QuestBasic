@@ -10,7 +10,7 @@ public class ControllerLineRenderer : MonoBehaviour
 
     void Update()
     {
-        // 右手のコントローラの位置と向いている方向からRayを作成
+        // コントローラの位置と向いている方向からRayを作成
         Ray laserPointer = new Ray(rayTransform.position, rayTransform.forward);
 
         // 作成したRay上にColliderがあるか判定
@@ -21,8 +21,6 @@ public class ControllerLineRenderer : MonoBehaviour
             renderLaserToHit(laserPointer, hit);
 
             GameObject pointedObject = hit.collider.gameObject;
-            //            pointedObject.transform.SendMessage("OnPointerEnter");
-
         }
         else
         {
