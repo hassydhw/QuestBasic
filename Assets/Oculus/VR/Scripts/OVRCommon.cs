@@ -19,6 +19,10 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
+#if USING_XR_SDK
+using UnityEngine.Experimental.XR;
+#endif
+
 #if UNITY_2017_2_OR_NEWER
 using InputTracking = UnityEngine.XR.InputTracking;
 using Node = UnityEngine.XR.XRNode;
@@ -233,7 +237,14 @@ public static class OVRNodeStateProperties
 	{
 		if (OVRManager.OVRManagerinitialized && OVRManager.loadedXRDevice == OVRManager.XRDevice.Oculus)
 			return OVRPlugin.hmdPresent;
+#if USING_XR_SDK
+		XRDisplaySubsystem currentDisplaySubsystem = OVRManager.GetCurrentDisplaySubsystem();
+		if (currentDisplaySubsystem != null)
+			return currentDisplaySubsystem.running;				//In 2019.3, this should be changed to currentDisplaySubsystem.isConnected, but this is a fine placeholder for now.
+		return false;
+#else
 		return Device.isPresent;
+#endif
 	}
 
 	public static bool GetNodeStatePropertyVector3(Node nodeType, NodeStatePropertyType propertyType, OVRPlugin.Node ovrpNodeType, OVRPlugin.Step stepType, out Vector3 retVec)

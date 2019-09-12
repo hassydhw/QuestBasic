@@ -120,7 +120,7 @@ class OVREngineConfigurationUpdater
 			return;
 		
 		EnforceBundleId();
-#if !UNITY_2019_2_OR_NEWER
+#if !USING_XR_SDK
 		EnforceVRSupport();
 #endif
 		EnforceInstallLocation();

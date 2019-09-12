@@ -29,6 +29,10 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+#if USING_XR_SDK
+using UnityEngine.Experimental.XR;
+#endif
+
 #if UNITY_2017_2_OR_NEWER
 using Settings = UnityEngine.XR.XRSettings;
 using Node = UnityEngine.XR.XRNode;
@@ -301,7 +305,7 @@ public class OVRManager : MonoBehaviour
 	/// If true, Unity will use the optimal antialiasing level for quality/performance on the current hardware.
 	/// </summary>
 	[Tooltip("If true, Unity will use the optimal antialiasing level for quality/performance on the current hardware.")]
-	public bool useRecommendedMSAALevel = false;
+	public bool useRecommendedMSAALevel = true;
 
 	/// <summary>
 	/// If true, both eyes will see the same image, rendered from the center eye pose, saving performance.
@@ -999,6 +1003,14 @@ public class OVRManager : MonoBehaviour
 	}
 
 	/// <summary>
+	/// If true, a lower-latency update will occur right before rendering. If false, the only controller pose update will occur at the start of simulation for a given frame.
+	/// Selecting this option lowers rendered latency for controllers and is often a net positive; however, it also creates a slight disconnect between rendered and simulated controller poses.
+	/// Visit online Oculus documentation to learn more.
+	/// </summary>
+	[Tooltip("If true, rendered controller latency is reduced by several ms, as the left/right controllers will have their positions updated right before rendering.")]
+	public bool LateControllerUpdate = true;
+
+	/// <summary>
 	/// True if the current platform supports virtual reality.
 	/// </summary>
 	public bool isSupportedPlatform { get; private set; }
@@ -1106,7 +1118,7 @@ public class OVRManager : MonoBehaviour
 	}
 #endif
 
-	internal static bool IsUnityAlphaOrBetaVersion()
+	public static bool IsUnityAlphaOrBetaVersion()
 	{
 		string ver = Application.unityVersion;
 		int pos = ver.Length - 1;
@@ -1122,7 +1134,7 @@ public class OVRManager : MonoBehaviour
 		return false;
 	}
 
-	internal static string UnityAlphaOrBetaVersionWarningMessage = "WARNING: It's not recommended to use Unity alpha/beta release in Oculus development. Use a stable release if you encounter any issue.";
+	public static string UnityAlphaOrBetaVersionWarningMessage = "WARNING: It's not recommended to use Unity alpha/beta release in Oculus development. Use a stable release if you encounter any issue.";
 
 #region Unity Messages
 
@@ -1289,15 +1301,15 @@ public class OVRManager : MonoBehaviour
 		OVRPlugin.occlusionMesh = true;
 #endif
 		OVRManagerinitialized = true;
+
 	}
 
 	private void Awake()
 	{
-		//If OVRPlugin is initialized on Awake(), or if the device is OpenVR, OVRManager should be initialized right away.
-		if (OVRPlugin.initialized || (Settings.enabled && Settings.loadedDeviceName == OPENVR_UNITY_NAME_STR))
-		{
-			InitOVRManager();
-		}
+#if !USING_XR_SDK
+		//For legacy, we can safely InitOVRManager on Awake(), as OVRPlugin is already initialized.
+		InitOVRManager();
+#endif
 	}
 
 #if UNITY_EDITOR
@@ -1312,13 +1324,25 @@ public class OVRManager : MonoBehaviour
 
 	void SetCurrentXRDevice()
 	{
+#if USING_XR_SDK
+		XRDisplaySubsystem currentDisplaySubsystem = GetCurrentDisplaySubsystem();
+		XRDisplaySubsystemDescriptor currentDisplaySubsystemDescriptor = GetCurrentDisplaySubsystemDescriptor();
+#endif
 		if (OVRPlugin.initialized)
 		{
 			loadedXRDevice = XRDevice.Oculus;
 		}
+#if USING_XR_SDK
+		else if (currentDisplaySubsystem != null && currentDisplaySubsystemDescriptor != null && currentDisplaySubsystem.running)
+#else
 		else if (Settings.enabled)
+#endif
 		{
-			String loadedXRDeviceName = Settings.loadedDeviceName;
+#if USING_XR_SDK
+			string loadedXRDeviceName = currentDisplaySubsystemDescriptor.id;
+#else
+			string loadedXRDeviceName = Settings.loadedDeviceName;
+#endif
 			if (loadedXRDeviceName == OPENVR_UNITY_NAME_STR)
 				loadedXRDevice = XRDevice.OpenVR;
 			else
@@ -1329,6 +1353,32 @@ public class OVRManager : MonoBehaviour
 			loadedXRDevice = XRDevice.Unknown;
 		}
 	}
+
+#if USING_XR_SDK
+
+	public static XRDisplaySubsystem GetCurrentDisplaySubsystem()
+	{
+		List<XRDisplaySubsystem> displaySubsystems = new List<XRDisplaySubsystem>();
+		SubsystemManager.GetInstances(displaySubsystems);
+		//Note: Here we are making the assumption that there will always be one valid display subsystem. If there is not, then submitFrame isn't being called,
+		//so for now this is a fine assumption to make.
+		if (displaySubsystems.Count > 0)
+			return displaySubsystems[0];
+		return null;
+	}
+
+	public static XRDisplaySubsystemDescriptor GetCurrentDisplaySubsystemDescriptor()
+	{
+		List<XRDisplaySubsystemDescriptor> displaySubsystemDescriptors = new List<XRDisplaySubsystemDescriptor>();
+		SubsystemManager.GetSubsystemDescriptors(displaySubsystemDescriptors);
+		if (displaySubsystemDescriptors.Count > 0)
+			return displaySubsystemDescriptors[0];
+		return null;
+	}
+#endif
+
+
+
 
 	void Initialize()
 	{
@@ -1347,21 +1397,22 @@ public class OVRManager : MonoBehaviour
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
 	private bool suppressDisableMixedRealityBecauseOfNoMainCameraWarning = false;
 #endif
+
 	private void Update()
 	{
+		//Only if we're using the XR SDK do we have to check if OVRManager isn't yet initialized, and init it.
+		//If we're on legacy, we know initialization occurred properly in Awake()
+#if USING_XR_SDK
 		if (!OVRManagerinitialized)
 		{
-			//Currently a hack which allows preserving legacy functionality, because if the loaded device is OpenVR, then this "return" will be skipped.
-			//Otherwise, it will keep being hit until OVRPlugin is initialized. Will replace this logic once the XR SDK becomes more fleshed out
-			if (OVRPlugin.initialized || (Settings.enabled && Settings.loadedDeviceName == OPENVR_UNITY_NAME_STR))
-			{
-				InitOVRManager();
-			}
-			else
-			{
+			XRDisplaySubsystem currentDisplaySubsystem = GetCurrentDisplaySubsystem();
+			XRDisplaySubsystemDescriptor currentDisplaySubsystemDescriptor = GetCurrentDisplaySubsystemDescriptor();
+			if (currentDisplaySubsystem == null || currentDisplaySubsystemDescriptor == null || !OVRPlugin.initialized)
 				return;
-			}
+			//If we're using the XR SDK and the display subsystem is present, and OVRPlugin is initialized, we can init OVRManager
+			InitOVRManager();
 		}
+#endif
 
 #if UNITY_EDITOR
 		if (_scriptsReloaded)
