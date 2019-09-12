@@ -18,7 +18,7 @@ public class SliderAction : MonoBehaviour {
 
     public void OnSliderValueChanged(float sValue)
     {
-        uText.text = sValue.ToString("F2") + " / " + Time.realtimeSinceStartup.ToString("F2");
+        uText.text = "value: " +   sValue.ToString("F2");
     }
 
 }
