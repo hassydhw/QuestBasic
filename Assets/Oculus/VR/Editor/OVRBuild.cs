@@ -198,7 +198,7 @@ partial class OculusBuildApp : EditorWindow
 		buildFailed = true;
 	}
 
-	[MenuItem("Oculus/OVR Build And Run", false, 10)]
+	[MenuItem("Oculus/OVR Build/OVR Build APK And Run #b", false, 20)]
 	static void StartBuildAndRun()
 	{
 		EditorWindow.GetWindow(typeof(OculusBuildApp));

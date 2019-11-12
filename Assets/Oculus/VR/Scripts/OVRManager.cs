@@ -14,6 +14,10 @@ ANY KIND, either express or implied. See the License for the specific language g
 permissions and limitations under the License.
 ************************************************************************************/
 
+#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#define USING_XR_SDK
+#endif
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 #define OVR_ANDROID_MRC
 #endif
@@ -1283,6 +1287,7 @@ public class OVRManager : MonoBehaviour
 			{
 				perfTcpServer.enabled = true;
 			}
+			OVRPlugin.SetDeveloperMode(OVRPlugin.Bool.True);
 		}
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
@@ -1297,8 +1302,12 @@ public class OVRManager : MonoBehaviour
 	private void Awake()
 	{
 #if !USING_XR_SDK
-		//For legacy, we can safely InitOVRManager on Awake(), as OVRPlugin is already initialized.
+		//For legacy, we should initialize OVRManager in all cases.
+		//For now, in XR SDK, only initialize if OVRPlugin is initialized.
 		InitOVRManager();
+#else
+		if (OVRPlugin.initialized)
+			InitOVRManager();
 #endif
 	}
 
@@ -1604,21 +1613,22 @@ public class OVRManager : MonoBehaviour
 		if (enableAdaptiveResolution)
 		{
 #if UNITY_2017_2_OR_NEWER
-			if (UnityEngine.XR.XRSettings.eyeTextureResolutionScale < maxRenderScale)
+			if (Settings.eyeTextureResolutionScale < maxRenderScale)
 			{
 				// Allocate renderScale to max to avoid re-allocation
-				UnityEngine.XR.XRSettings.eyeTextureResolutionScale = maxRenderScale;
+				Settings.eyeTextureResolutionScale = maxRenderScale;
 			}
 			else
 			{
 				// Adjusting maxRenderScale in case app started with a larger renderScale value
-				maxRenderScale = Mathf.Max(maxRenderScale, UnityEngine.XR.XRSettings.eyeTextureResolutionScale);
+				maxRenderScale = Mathf.Max(maxRenderScale, Settings.eyeTextureResolutionScale);
 			}
 			minRenderScale = Mathf.Min(minRenderScale, maxRenderScale);
-			float minViewportScale = minRenderScale / UnityEngine.XR.XRSettings.eyeTextureResolutionScale;
-			float recommendedViewportScale = OVRPlugin.GetEyeRecommendedResolutionScale() / UnityEngine.XR.XRSettings.eyeTextureResolutionScale;
+			float minViewportScale = minRenderScale / Settings.eyeTextureResolutionScale;
+			float recommendedViewportScale = Mathf.Clamp(Mathf.Sqrt(OVRPlugin.GetAdaptiveGPUPerformanceScale()) * Settings.eyeTextureResolutionScale * Settings.renderViewportScale, 0.5f, 2.0f);
+			recommendedViewportScale /= Settings.eyeTextureResolutionScale;
 			recommendedViewportScale = Mathf.Clamp(recommendedViewportScale, minViewportScale, 1.0f);
-			UnityEngine.XR.XRSettings.renderViewportScale = recommendedViewportScale;
+			Settings.renderViewportScale = recommendedViewportScale;
 #else
 			if (UnityEngine.VR.VRSettings.renderScale < maxRenderScale)
 			{

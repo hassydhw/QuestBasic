@@ -14,6 +14,10 @@ ANY KIND, either express or implied. See the License for the specific language g
 permissions and limitations under the License.
 ************************************************************************************/
 
+#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#define USING_XR_SDK
+#endif
+
 #if !(UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || (UNITY_ANDROID && !UNITY_EDITOR))
 #define OVRPLUGIN_UNSUPPORTED_PLATFORM
 #endif
@@ -39,7 +43,7 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 	public static readonly System.Version wrapperVersion = _versionZero;
 #else
-	public static readonly System.Version wrapperVersion = OVRP_1_41_0.version;
+	public static readonly System.Version wrapperVersion = OVRP_1_42_0.version;
 #endif
 
 #if !OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -3975,6 +3979,27 @@ public static class OVRPlugin
 #endif
 	}
 
+	public static float GetAdaptiveGPUPerformanceScale()
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return 1.0f;
+#else
+		if (version >= OVRP_1_42_0.version)
+		{
+			float adaptiveScale = 1.0f;
+			if (OVRP_1_42_0.ovrp_GetAdaptiveGpuPerformanceScale2(ref adaptiveScale) == Result.Success)
+			{
+				return adaptiveScale;
+			}
+			return 1.0f;
+		}
+		else
+		{
+			return 1.0f;
+		}
+#endif
+	}
+
 	private const string pluginName = "OVRPlugin";
 	private static System.Version _versionZero = new System.Version(0, 0, 0);
 
@@ -4734,6 +4759,14 @@ public static class OVRPlugin
 	private static class OVRP_1_41_0
 	{
 		public static readonly System.Version version = new System.Version(1, 41, 0);
+	}
+
+	private static class OVRP_1_42_0
+	{
+		public static readonly System.Version version = new System.Version(1, 42, 0);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetAdaptiveGpuPerformanceScale2(ref float adaptiveGpuPerformanceScale);
 	}
 
 #endif // !OVRPLUGIN_UNSUPPORTED_PLATFORM

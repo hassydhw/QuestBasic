@@ -1913,6 +1913,14 @@ namespace Oculus.Platform
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_LaunchDetails_GetDeeplinkMessage")]
     private static extern IntPtr ovr_LaunchDetails_GetDeeplinkMessage_Native(IntPtr obj);
 
+    public static string ovr_LaunchDetails_GetDestinationApiName(IntPtr obj) {
+      var result = StringFromNative(ovr_LaunchDetails_GetDestinationApiName_Native(obj));
+      return result;
+    }
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_LaunchDetails_GetDestinationApiName")]
+    private static extern IntPtr ovr_LaunchDetails_GetDestinationApiName_Native(IntPtr obj);
+
     public static string ovr_LaunchDetails_GetLaunchSource(IntPtr obj) {
       var result = StringFromNative(ovr_LaunchDetails_GetLaunchSource_Native(obj));
       return result;
@@ -2950,6 +2958,14 @@ namespace Oculus.Platform
 
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_User_GetPresenceDeeplinkMessage")]
     private static extern IntPtr ovr_User_GetPresenceDeeplinkMessage_Native(IntPtr obj);
+
+    public static string ovr_User_GetPresenceDestinationApiName(IntPtr obj) {
+      var result = StringFromNative(ovr_User_GetPresenceDestinationApiName_Native(obj));
+      return result;
+    }
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_User_GetPresenceDestinationApiName")]
+    private static extern IntPtr ovr_User_GetPresenceDestinationApiName_Native(IntPtr obj);
 
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
     public static extern UserPresenceStatus ovr_User_GetPresenceStatus(IntPtr obj);

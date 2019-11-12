@@ -229,10 +229,20 @@ public class OVRGradleGeneration
 					}
 				}
 
-				// Disable allowBackup in manifest and add Android NSC XML file
 				XmlElement applicationNode = (XmlElement)doc.SelectSingleNode("/manifest/application");
 				if(applicationNode != null)
 				{
+					// If android label and icon are missing from the xml, add them
+					if (applicationNode.GetAttribute("android:label") == null)
+					{
+						applicationNode.SetAttribute("label", androidNamepsaceURI, "@string/app_name");
+					}
+					if (applicationNode.GetAttribute("android:icon") == null)
+					{
+						applicationNode.SetAttribute("icon", androidNamepsaceURI, "@mipmap/app_icon");
+					}
+
+					// Disable allowBackup in manifest and add Android NSC XML file
 					OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
 					if (projectConfig != null)
 					{
@@ -272,7 +282,7 @@ public class OVRGradleGeneration
 	}
 #endif
 
-	public void OnPostprocessBuild(BuildReport report)
+					public void OnPostprocessBuild(BuildReport report)
 	{
 #if UNITY_ANDROID
 		if(autoIncrementVersion)
@@ -388,7 +398,7 @@ public class OVRGradleGeneration
 			DataReceivedEventHandler outputRecieved = new DataReceivedEventHandler(
 				(s, e) =>
 				{
-					if (e.Data.Length != 0 && !e.Data.Contains("\u001b"))
+					if (e.Data != null && e.Data.Length != 0 && !e.Data.Contains("\u001b"))
 					{
 						if (e.Data.Contains("free_cache"))
 						{
