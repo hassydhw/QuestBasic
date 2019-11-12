@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 #if USING_XR_SDK
+using UnityEngine.XR;
 using UnityEngine.Experimental.XR;
 #endif
 

@@ -202,7 +202,6 @@ public class OVRGradleGeneration
 					if (attr == "android.intent.category.LAUNCHER")
 					{
 						e.SetAttribute("name", androidNamepsaceURI, "android.intent.category.INFO");
-						doc.Save(manifestFolder + "/AndroidManifest.xml");
 					}
 				}
 
@@ -227,9 +226,43 @@ public class OVRGradleGeneration
 						string tagRequired = OVRDeviceSelector.isTargetDeviceGearVrOrGo ? "false" : "true";
 						headtrackingTag.SetAttribute("required", androidNamepsaceURI, tagRequired);
 						manifestElement.AppendChild(headtrackingTag);
-						doc.Save(manifestFolder + "/AndroidManifest.xml");
 					}
 				}
+
+				// Disable allowBackup in manifest and add Android NSC XML file
+				XmlElement applicationNode = (XmlElement)doc.SelectSingleNode("/manifest/application");
+				if(applicationNode != null)
+				{
+					OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
+					if (projectConfig != null)
+					{
+						if (projectConfig.disableBackups)
+						{
+							applicationNode.SetAttribute("allowBackup", androidNamepsaceURI, "false");
+						}
+
+						if (projectConfig.enableNSCConfig)
+						{
+							applicationNode.SetAttribute("networkSecurityConfig", androidNamepsaceURI, "@xml/network_sec_config");
+
+							string securityConfigFile = Path.Combine(Application.dataPath, "Oculus/VR/Editor/network_sec_config.xml");
+							string xmlDirectory = Path.Combine(path, "src/main/res/xml");
+							try
+							{
+								if (!Directory.Exists(xmlDirectory))
+								{
+									Directory.CreateDirectory(xmlDirectory);
+								}
+								File.Copy(securityConfigFile, Path.Combine(xmlDirectory, "network_sec_config.xml"), true);
+							}
+							catch (Exception e)
+							{
+								UnityEngine.Debug.LogError(e.Message);
+							}
+						}
+					}
+				}
+				doc.Save(manifestFolder + "/AndroidManifest.xml");
 			}
 		}
 		catch (Exception e)

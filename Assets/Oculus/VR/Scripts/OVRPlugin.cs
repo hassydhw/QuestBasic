@@ -39,7 +39,7 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 	public static readonly System.Version wrapperVersion = _versionZero;
 #else
-	public static readonly System.Version wrapperVersion = OVRP_1_40_0.version;
+	public static readonly System.Version wrapperVersion = OVRP_1_41_0.version;
 #endif
 
 #if !OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -3839,7 +3839,7 @@ public static class OVRPlugin
 #endif
 		}
 
-		public static bool EncodeMrcFrame(System.IntPtr textureHandle, float[] audioData, int audioChannels, double timestamp, ref int outSyncId)
+		public static bool EncodeMrcFrame(System.IntPtr textureHandle, float[] audioData, int audioFrames, int audioChannels, double timestamp, ref int outSyncId)
 		{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 			return false;
@@ -3864,7 +3864,7 @@ public static class OVRPlugin
 				{
 					pinnedAudioData = GCHandle.Alloc(audioData, GCHandleType.Pinned);
 					audioDataPtr = pinnedAudioData.AddrOfPinnedObject();
-					audioDataLen = audioData.Length * 4;
+					audioDataLen = audioFrames * 4;
 				}
 				Result result = OVRP_1_38_0.ovrp_Media_EncodeMrcFrame(textureHandle, audioDataPtr, audioDataLen, audioChannels, timestamp, ref outSyncId);
 				if (audioData != null)
@@ -3883,7 +3883,7 @@ public static class OVRPlugin
 #if !OVRPLUGIN_UNSUPPORTED_PLATFORM
 		static Texture2D cachedTexture = null;
 #endif
-		public static bool EncodeMrcFrame(RenderTexture frame, float[] audioData, int audioChannels, double timestamp, ref int outSyncId)
+		public static bool EncodeMrcFrame(RenderTexture frame, float[] audioData, int audioFrames, int audioChannels, double timestamp, ref int outSyncId)
 		{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 			return false;
@@ -3923,7 +3923,7 @@ public static class OVRPlugin
 				{
 					pinnedAudioData = GCHandle.Alloc(audioData, GCHandleType.Pinned);
 					audioDataPtr = pinnedAudioData.AddrOfPinnedObject();
-					audioDataLen = audioData.Length * 4;
+					audioDataLen = audioFrames * 4;
 				}
 				Result result = OVRP_1_38_0.ovrp_Media_EncodeMrcFrame(pointer, audioDataPtr, audioDataLen, audioChannels, timestamp, ref outSyncId);
 
@@ -4729,6 +4729,11 @@ public static class OVRPlugin
 	private static class OVRP_1_40_0
 	{
 		public static readonly System.Version version = new System.Version(1, 40, 0);
+	}
+
+	private static class OVRP_1_41_0
+	{
+		public static readonly System.Version version = new System.Version(1, 41, 0);
 	}
 
 #endif // !OVRPLUGIN_UNSUPPORTED_PLATFORM

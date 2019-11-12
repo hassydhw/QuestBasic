@@ -1740,6 +1740,18 @@ namespace Oculus.Platform
       return null;
     }
 
+    /// Gets all the destinations that the presence can be set to
+    ///
+    public static Request<Models.DestinationList> GetDestinations()
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.DestinationList>(CAPI.ovr_RichPresence_GetDestinations());
+      }
+
+      return null;
+    }
+
     /// Set rich presence for running app
     ///
     public static Request Set(RichPresenceOptions richPresenceOptions)
@@ -2482,6 +2494,29 @@ namespace Oculus.Platform
           CAPI.ovr_HTTP_GetWithMessageType(
             list.NextUrl,
             (int)Message.MessageType.Notification_GetNextRoomInviteNotificationArrayPage
+          )
+        );
+      }
+
+      return null;
+    }
+
+  }
+
+  public static partial class RichPresence {
+    public static Request<Models.DestinationList> GetNextDestinationListPage(Models.DestinationList list) {
+      if (!list.HasNextPage)
+      {
+        Debug.LogWarning("Oculus.Platform.GetNextDestinationListPage: List has no next page");
+        return null;
+      }
+
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.DestinationList>(
+          CAPI.ovr_HTTP_GetWithMessageType(
+            list.NextUrl,
+            (int)Message.MessageType.RichPresence_GetNextDestinationArrayPage
           )
         );
       }
