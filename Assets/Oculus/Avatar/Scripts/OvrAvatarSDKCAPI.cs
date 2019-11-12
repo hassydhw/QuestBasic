@@ -43,6 +43,7 @@ public enum ovrAvatarAssetType {
     Material,
     CombinedMesh,
     PBSMaterial,
+    FailedLoad,
     Count
 };
 
@@ -667,7 +668,9 @@ public struct ovrAvatarBlendShapeParams
 struct ovrAvatarBlendShapeParams_Offsets
 {
     public static Int32 blendShapeParamCount = Marshal.OffsetOf(typeof(ovrAvatarBlendShapeParams), "blendShapeParamCount").ToInt32();
-    public static long blendShapeParams = Marshal.OffsetOf(typeof(ovrAvatarBlendShapeParams), "blendShapeParams").ToInt64();
+    // Bug with Marshal.OffsetOf is returning an incorrect offset, causing an off by 1 float issue in the blendShapeParams
+    //public static long blendShapeParams = Marshal.OffsetOf(typeof(ovrAvatarBlendShapeParams), "blendShapeParams").ToInt64();
+    public static long blendShapeParams = Marshal.SizeOf(typeof(UInt32));
 };
 
 // This needs to be the csharp equivalent of ovrAvatarVisemes in OVR_Avatar.h
@@ -681,7 +684,9 @@ public struct ovrAvatarVisemes
 struct ovrAvatarVisemes_Offsets
 {
     public static Int32 visemeParamCount = Marshal.OffsetOf(typeof(ovrAvatarVisemes), "visemeParamCount").ToInt32();
-    public static long visemeParams = Marshal.OffsetOf(typeof(ovrAvatarVisemes), "visemeParams").ToInt64();
+    // Bug with Marshal.OffsetOf is returning an incorrect offset, causing an off by 1 float issue in the visemeParams
+    //public static long visemeParams = Marshal.OffsetOf(typeof(ovrAvatarVisemes), "visemeParams").ToInt64();
+    public static long visemeParams = Marshal.SizeOf(typeof(UInt32));
 };
 
 // This needs to be the csharp equivalent of ovrAvatarGazeTargetType in OVR_AvatarInternal.h

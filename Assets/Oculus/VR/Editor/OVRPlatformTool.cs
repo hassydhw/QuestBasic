@@ -505,7 +505,7 @@ namespace Assets.Oculus.VR.Editor
 			ovrPlatUtilProcess.OutputDataReceived += new DataReceivedEventHandler(
 				(s, e) =>
 				{
-					if (e.Data.Length != 0 && !e.Data.Contains("\u001b"))
+					if (e.Data != null && e.Data.Length != 0 && !e.Data.Contains("\u001b"))
 					{
 						OVRPlatformTool.log += e.Data + "\n";
 					}
@@ -606,7 +606,7 @@ namespace Assets.Oculus.VR.Editor
 				ovrPlatUtilProcess.OutputDataReceived += new DataReceivedEventHandler(
 					(s, e) =>
 					{
-						if (e.Data.Length != 0 && !e.Data.Contains("\u001b"))
+						if (e.Data != null && e.Data.Length != 0 && !e.Data.Contains("\u001b"))
 						{
 							OVRPlatformTool.log += e.Data + "\n";
 						}

@@ -14,6 +14,10 @@ ANY KIND, either express or implied. See the License for the specific language g
 permissions and limitations under the License.
 ************************************************************************************/
 
+#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#define USING_XR_SDK
+#endif
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 #define OVR_ANDROID_MRC
 #endif
@@ -30,6 +34,7 @@ using UnityEditor;
 #endif
 
 #if USING_XR_SDK
+using UnityEngine.XR;
 using UnityEngine.Experimental.XR;
 #endif
 
@@ -444,8 +449,7 @@ public class OVRManager : MonoBehaviour
 	public enum CompositionMethod
 	{
 		External,
-		Direct,
-		Sandwich
+		Direct
 	}
 
 	/// <summary>
@@ -461,10 +465,16 @@ public class OVRManager : MonoBehaviour
 	public LayerMask extraHiddenLayers;
 
 	/// <summary>
-	/// The backdrop color will be used when rendering the foreground frames. It only applies to External Composition.
+	/// The backdrop color will be used when rendering the foreground frames (on Rift). It only applies to External Composition.
 	/// </summary>
-	[HideInInspector, Tooltip("Backdrop color (External Compositon)")]
-	public Color externalCompositionBackdropColor = Color.clear;
+	[HideInInspector, Tooltip("Backdrop color for Rift (External Compositon)")]
+	public Color externalCompositionBackdropColorRift = Color.green;
+
+	/// <summary>
+	/// The backdrop color will be used when rendering the foreground frames (on Quest). It only applies to External Composition.
+	/// </summary>
+	[HideInInspector, Tooltip("Backdrop color for Quest (External Compositon)")]
+	public Color externalCompositionBackdropColorQuest = Color.clear;
 
 	/// <summary>
 	/// If true, Mixed Reality mode will use direct composition from the first web camera
@@ -1061,7 +1071,6 @@ public class OVRManager : MonoBehaviour
 	}
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
-	private static bool prevEnableMixedReality = false;
 	private static bool MixedRealityEnabledFromCmd()
 	{
 		var args = System.Environment.GetCommandLineArgs();
@@ -1206,65 +1215,50 @@ public class OVRManager : MonoBehaviour
 #endif
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-		bool loadMrcConfig = LoadMixedRealityCaptureConfigurationFileFromCmd();
-		bool createMrcConfig = CreateMixedRealityCaptureConfigurationFileFromCmd();
-
-		if (loadMrcConfig || createMrcConfig)
+		if (!staticMixedRealityCaptureInitialized)
 		{
-			OVRMixedRealityCaptureSettings mrcSettings = ScriptableObject.CreateInstance<OVRMixedRealityCaptureSettings>();
-			mrcSettings.ReadFrom(this);
-			if (loadMrcConfig)
-			{
-				mrcSettings.CombineWithConfigurationFile();
-				mrcSettings.ApplyTo(this);
-			}
-			if (createMrcConfig)
-			{
-				mrcSettings.WriteToConfigurationFile();
-			}
-			ScriptableObject.Destroy(mrcSettings);
-		}
+			bool loadMrcConfig = LoadMixedRealityCaptureConfigurationFileFromCmd();
+			bool createMrcConfig = CreateMixedRealityCaptureConfigurationFileFromCmd();
 
-		if (MixedRealityEnabledFromCmd())
-		{
-			enableMixedReality = true;
-		}
+			if (loadMrcConfig || createMrcConfig)
+			{
+				OVRMixedRealityCaptureSettings mrcSettings = ScriptableObject.CreateInstance<OVRMixedRealityCaptureSettings>();
+				mrcSettings.ReadFrom(this);
+				if (loadMrcConfig)
+				{
+					mrcSettings.CombineWithConfigurationFile();
+					mrcSettings.ApplyTo(this);
+				}
+				if (createMrcConfig)
+				{
+					mrcSettings.WriteToConfigurationFile();
+				}
+				ScriptableObject.Destroy(mrcSettings);
+			}
 
-		if (enableMixedReality)
-		{
-			Debug.Log("OVR: Mixed Reality mode enabled");
-			if (UseDirectCompositionFromCmd())
+			if (MixedRealityEnabledFromCmd())
 			{
-				compositionMethod = CompositionMethod.Direct;
+				enableMixedReality = true;
 			}
-			if (UseExternalCompositionFromCmd())
+
+			if (enableMixedReality)
 			{
-				compositionMethod = CompositionMethod.External;
+				Debug.Log("OVR: Mixed Reality mode enabled");
+				if (UseDirectCompositionFromCmd())
+				{
+					compositionMethod = CompositionMethod.Direct;
+				}
+				if (UseExternalCompositionFromCmd())
+				{
+					compositionMethod = CompositionMethod.External;
+				}
+				Debug.Log("OVR: CompositionMethod : " + compositionMethod);
 			}
-			Debug.Log("OVR: CompositionMethod : " + compositionMethod);
 		}
 #endif
 
-#if OVR_ANDROID_MRC
-		bool mediaInitialized = OVRPlugin.Media.Initialize();
-		Debug.Log(mediaInitialized ? "OVRPlugin.Media initialized" : "OVRPlugin.Media not initialized");
-		if (mediaInitialized)
-		{
-			OVRPlugin.Media.SetMrcAudioSampleRate(AudioSettings.outputSampleRate);
-			Debug.LogFormat("[MRC] SetMrcAudioSampleRate({0})", AudioSettings.outputSampleRate);
-			OVRPlugin.Media.SetMrcInputVideoBufferType(OVRPlugin.Media.InputVideoBufferType.TextureHandle);
-			Debug.LogFormat("[MRC] Active InputVideoBufferType:{0}", OVRPlugin.Media.GetMrcInputVideoBufferType());
-			if (mrcActivationMode == MrcActivationMode.Automatic)
-			{
-				OVRPlugin.Media.SetMrcActivationMode(OVRPlugin.Media.MrcActivationMode.Automatic);
-				Debug.LogFormat("[MRC] ActivateMode: Automatic");
-			}
-			else if (mrcActivationMode == MrcActivationMode.Disabled)
-			{
-				OVRPlugin.Media.SetMrcActivationMode(OVRPlugin.Media.MrcActivationMode.Disabled);
-				Debug.LogFormat("[MRC] ActivateMode: Disabled");
-			}
-		}
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
+		StaticInitializeMixedRealityCapture(this);
 #endif
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
@@ -1293,6 +1287,7 @@ public class OVRManager : MonoBehaviour
 			{
 				perfTcpServer.enabled = true;
 			}
+			OVRPlugin.SetDeveloperMode(OVRPlugin.Bool.True);
 		}
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
@@ -1307,8 +1302,12 @@ public class OVRManager : MonoBehaviour
 	private void Awake()
 	{
 #if !USING_XR_SDK
-		//For legacy, we can safely InitOVRManager on Awake(), as OVRPlugin is already initialized.
+		//For legacy, we should initialize OVRManager in all cases.
+		//For now, in XR SDK, only initialize if OVRPlugin is initialized.
 		InitOVRManager();
+#else
+		if (OVRPlugin.initialized)
+			InitOVRManager();
 #endif
 	}
 
@@ -1394,7 +1393,7 @@ public class OVRManager : MonoBehaviour
 
 	}
 
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
 	private bool suppressDisableMixedRealityBecauseOfNoMainCameraWarning = false;
 #endif
 
@@ -1428,6 +1427,9 @@ public class OVRManager : MonoBehaviour
 		if (OVRPlugin.shouldQuit)
 		{
 			Debug.Log("[OVRManager] OVRPlugin.shouldQuit detected");
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
+			StaticShutdownMixedRealityCapture(instance);
+#endif
 			Application.Quit();
 		}
 
@@ -1611,21 +1613,22 @@ public class OVRManager : MonoBehaviour
 		if (enableAdaptiveResolution)
 		{
 #if UNITY_2017_2_OR_NEWER
-			if (UnityEngine.XR.XRSettings.eyeTextureResolutionScale < maxRenderScale)
+			if (Settings.eyeTextureResolutionScale < maxRenderScale)
 			{
 				// Allocate renderScale to max to avoid re-allocation
-				UnityEngine.XR.XRSettings.eyeTextureResolutionScale = maxRenderScale;
+				Settings.eyeTextureResolutionScale = maxRenderScale;
 			}
 			else
 			{
 				// Adjusting maxRenderScale in case app started with a larger renderScale value
-				maxRenderScale = Mathf.Max(maxRenderScale, UnityEngine.XR.XRSettings.eyeTextureResolutionScale);
+				maxRenderScale = Mathf.Max(maxRenderScale, Settings.eyeTextureResolutionScale);
 			}
 			minRenderScale = Mathf.Min(minRenderScale, maxRenderScale);
-			float minViewportScale = minRenderScale / UnityEngine.XR.XRSettings.eyeTextureResolutionScale;
-			float recommendedViewportScale = OVRPlugin.GetEyeRecommendedResolutionScale() / UnityEngine.XR.XRSettings.eyeTextureResolutionScale;
+			float minViewportScale = minRenderScale / Settings.eyeTextureResolutionScale;
+			float recommendedViewportScale = Mathf.Clamp(Mathf.Sqrt(OVRPlugin.GetAdaptiveGPUPerformanceScale()) * Settings.eyeTextureResolutionScale * Settings.renderViewportScale, 0.5f, 2.0f);
+			recommendedViewportScale /= Settings.eyeTextureResolutionScale;
 			recommendedViewportScale = Mathf.Clamp(recommendedViewportScale, minViewportScale, 1.0f);
-			UnityEngine.XR.XRSettings.renderViewportScale = recommendedViewportScale;
+			Settings.renderViewportScale = recommendedViewportScale;
 #else
 			if (UnityEngine.VR.VRSettings.renderScale < maxRenderScale)
 			{
@@ -1727,62 +1730,22 @@ public class OVRManager : MonoBehaviour
 		display.Update();
 		OVRInput.Update();
 
-#if OVR_ANDROID_MRC
-		enableMixedReality = OVRPlugin.Media.GetInitialized() && OVRPlugin.Media.IsMrcActivated();
-		compositionMethod = CompositionMethod.External;		// force external composition on Android MRC
-
-		if (OVRPlugin.Media.GetInitialized())
-		{
-			OVRPlugin.Media.Update();
-		}
-#endif
-
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
-		if (enableMixedReality && !prevEnableMixedReality)
-		{
-			OVRPlugin.SendEvent("mixed_reality_capture", "activated");
-			Debug.Log("MixedRealityCapture: activate");
-		}
-
-		if (!enableMixedReality && prevEnableMixedReality)
-		{
-			Debug.Log("MixedRealityCapture: deactivate");
-		}
-
-		if (enableMixedReality || prevEnableMixedReality)
-		{
-			Camera mainCamera = FindMainCamera();
-			if (Camera.main != null)
-			{
-				suppressDisableMixedRealityBecauseOfNoMainCameraWarning = false;
-
-				if (enableMixedReality)
-				{
-					OVRMixedReality.Update(this.gameObject, mainCamera, compositionMethod, useDynamicLighting, capturingCameraDevice, depthQuality);
-				}
-
-				if (prevEnableMixedReality && !enableMixedReality)
-				{
-					OVRMixedReality.Cleanup();
-				}
-
-				prevEnableMixedReality = enableMixedReality;
-			}
-			else
-			{
-				if (!suppressDisableMixedRealityBecauseOfNoMainCameraWarning)
-				{
-					Debug.LogWarning("Main Camera is not set, Mixed Reality disabled");
-					suppressDisableMixedRealityBecauseOfNoMainCameraWarning = true;
-				}
-			}
-		}
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
+		StaticUpdateMixedRealityCapture(this);
 #endif
 	}
 
 	private bool multipleMainCameraWarningPresented = false;
+	private Camera lastFoundMainCamera = null;
 	private Camera FindMainCamera()
 	{
+		if (lastFoundMainCamera != null && lastFoundMainCamera.CompareTag("MainCamera"))
+		{
+			return lastFoundMainCamera;
+		}
+
+		Camera result = null;
+
 		GameObject[] objects = GameObject.FindGameObjectsWithTag("MainCamera");
 		List<Camera> cameras = new List<Camera>(4);
 		foreach (GameObject obj in objects)
@@ -1799,11 +1762,11 @@ public class OVRManager : MonoBehaviour
 		}
 		if (cameras.Count == 0)
 		{
-			return Camera.main;		// pick one of the cameras which tagged as "MainCamera"
+			result = Camera.main; // pick one of the cameras which tagged as "MainCamera"
 		}
 		else if (cameras.Count == 1)
 		{
-			return cameras[0];
+			result = cameras[0];
 		}
 		else
 		{
@@ -1814,8 +1777,19 @@ public class OVRManager : MonoBehaviour
 			}
 			// return the camera with least depth
 			cameras.Sort((Camera c0, Camera c1) => { return c0.depth < c1.depth ? -1 : (c0.depth > c1.depth ? 1 : 0); });
-			return cameras[0];
+			result = cameras[0];
 		}
+
+		if (result != null)
+		{
+			Debug.LogFormat("[OVRManager] mainCamera found for MRC: ", result.gameObject.name);
+		}
+		else
+		{
+			Debug.Log("[OVRManager] unable to find a vaild camera");
+		}
+		lastFoundMainCamera = result;
+		return result;
 	}
 
 	private void OnDisable()
@@ -1825,17 +1799,6 @@ public class OVRManager : MonoBehaviour
 		{
 			perfTcpServer.enabled = false;
 		}
-
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
-		OVRMixedReality.Cleanup();
-#endif
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-		if (OVRPlugin.Media.GetInitialized())
-		{
-			OVRPlugin.Media.Shutdown();
-		}
-#endif
 	}
 
 	private void LateUpdate()
@@ -1901,4 +1864,129 @@ public class OVRManager : MonoBehaviour
 
 		OVRPlugin.ShowUI(OVRPlugin.PlatformUI.ConfirmQuit);
 	}
+
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
+
+	public static bool staticMixedRealityCaptureInitialized = false;
+	public static bool staticPrevEnableMixedRealityCapture = false;
+	public static OVRMixedRealityCaptureSettings staticMrcSettings = null;
+
+	public static void StaticInitializeMixedRealityCapture(OVRManager instance)
+	{
+		if (!staticMixedRealityCaptureInitialized)
+		{
+			staticMrcSettings = ScriptableObject.CreateInstance<OVRMixedRealityCaptureSettings>();
+			staticMrcSettings.ReadFrom(OVRManager.instance);
+
+#if OVR_ANDROID_MRC
+			bool mediaInitialized = OVRPlugin.Media.Initialize();
+			Debug.Log(mediaInitialized ? "OVRPlugin.Media initialized" : "OVRPlugin.Media not initialized");
+			if (mediaInitialized)
+			{
+				OVRPlugin.Media.SetMrcAudioSampleRate(AudioSettings.outputSampleRate);
+				Debug.LogFormat("[MRC] SetMrcAudioSampleRate({0})", AudioSettings.outputSampleRate);
+				OVRPlugin.Media.SetMrcInputVideoBufferType(OVRPlugin.Media.InputVideoBufferType.TextureHandle);
+				Debug.LogFormat("[MRC] Active InputVideoBufferType:{0}", OVRPlugin.Media.GetMrcInputVideoBufferType());
+				if (instance.mrcActivationMode == MrcActivationMode.Automatic)
+				{
+					OVRPlugin.Media.SetMrcActivationMode(OVRPlugin.Media.MrcActivationMode.Automatic);
+					Debug.LogFormat("[MRC] ActivateMode: Automatic");
+				}
+				else if (instance.mrcActivationMode == MrcActivationMode.Disabled)
+				{
+					OVRPlugin.Media.SetMrcActivationMode(OVRPlugin.Media.MrcActivationMode.Disabled);
+					Debug.LogFormat("[MRC] ActivateMode: Disabled");
+				}
+			}
+#endif
+			staticPrevEnableMixedRealityCapture = false;
+
+			staticMixedRealityCaptureInitialized = true;
+		}
+		else
+		{
+			staticMrcSettings.ApplyTo(instance);
+		}
+	}
+
+	public static void StaticUpdateMixedRealityCapture(OVRManager instance)
+	{
+		if (!staticMixedRealityCaptureInitialized)
+		{
+			return;
+		}
+
+#if OVR_ANDROID_MRC
+		instance.enableMixedReality = OVRPlugin.Media.GetInitialized() && OVRPlugin.Media.IsMrcActivated();
+		instance.compositionMethod = CompositionMethod.External;		// force external composition on Android MRC
+
+		if (OVRPlugin.Media.GetInitialized())
+		{
+			OVRPlugin.Media.Update();
+		}
+#endif
+
+		if (instance.enableMixedReality && !staticPrevEnableMixedRealityCapture)
+		{
+			OVRPlugin.SendEvent("mixed_reality_capture", "activated");
+			Debug.Log("MixedRealityCapture: activate");
+		}
+
+		if (!instance.enableMixedReality && staticPrevEnableMixedRealityCapture)
+		{
+			Debug.Log("MixedRealityCapture: deactivate");
+		}
+
+		if (instance.enableMixedReality || staticPrevEnableMixedRealityCapture)
+		{
+			Camera mainCamera = instance.FindMainCamera();
+			if (Camera.main != null)
+			{
+				instance.suppressDisableMixedRealityBecauseOfNoMainCameraWarning = false;
+
+				if (instance.enableMixedReality)
+				{
+					OVRMixedReality.Update(instance.gameObject, mainCamera, instance.compositionMethod, instance.useDynamicLighting, instance.capturingCameraDevice, instance.depthQuality);
+				}
+
+				if (staticPrevEnableMixedRealityCapture && !instance.enableMixedReality)
+				{
+					OVRMixedReality.Cleanup();
+				}
+
+				staticPrevEnableMixedRealityCapture = instance.enableMixedReality;
+			}
+			else
+			{
+				if (!instance.suppressDisableMixedRealityBecauseOfNoMainCameraWarning)
+				{
+					Debug.LogWarning("Main Camera is not set, Mixed Reality disabled");
+					instance.suppressDisableMixedRealityBecauseOfNoMainCameraWarning = true;
+				}
+			}
+		}
+
+		staticMrcSettings.ReadFrom(OVRManager.instance);
+	}
+
+	public static void StaticShutdownMixedRealityCapture(OVRManager instance)
+	{
+		if (staticMixedRealityCaptureInitialized)
+		{
+			ScriptableObject.Destroy(staticMrcSettings);
+			staticMrcSettings = null;
+
+			OVRMixedReality.Cleanup();
+
+#if OVR_ANDROID_MRC
+			if (OVRPlugin.Media.GetInitialized())
+			{
+				OVRPlugin.Media.Shutdown();
+			}
+#endif
+			staticMixedRealityCaptureInitialized = false;
+		}
+	}
+
+#endif
 }

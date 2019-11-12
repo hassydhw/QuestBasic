@@ -202,7 +202,6 @@ public class OVRGradleGeneration
 					if (attr == "android.intent.category.LAUNCHER")
 					{
 						e.SetAttribute("name", androidNamepsaceURI, "android.intent.category.INFO");
-						doc.Save(manifestFolder + "/AndroidManifest.xml");
 					}
 				}
 
@@ -227,9 +226,53 @@ public class OVRGradleGeneration
 						string tagRequired = OVRDeviceSelector.isTargetDeviceGearVrOrGo ? "false" : "true";
 						headtrackingTag.SetAttribute("required", androidNamepsaceURI, tagRequired);
 						manifestElement.AppendChild(headtrackingTag);
-						doc.Save(manifestFolder + "/AndroidManifest.xml");
 					}
 				}
+
+				XmlElement applicationNode = (XmlElement)doc.SelectSingleNode("/manifest/application");
+				if(applicationNode != null)
+				{
+					// If android label and icon are missing from the xml, add them
+					if (applicationNode.GetAttribute("android:label") == null)
+					{
+						applicationNode.SetAttribute("label", androidNamepsaceURI, "@string/app_name");
+					}
+					if (applicationNode.GetAttribute("android:icon") == null)
+					{
+						applicationNode.SetAttribute("icon", androidNamepsaceURI, "@mipmap/app_icon");
+					}
+
+					// Disable allowBackup in manifest and add Android NSC XML file
+					OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
+					if (projectConfig != null)
+					{
+						if (projectConfig.disableBackups)
+						{
+							applicationNode.SetAttribute("allowBackup", androidNamepsaceURI, "false");
+						}
+
+						if (projectConfig.enableNSCConfig)
+						{
+							applicationNode.SetAttribute("networkSecurityConfig", androidNamepsaceURI, "@xml/network_sec_config");
+
+							string securityConfigFile = Path.Combine(Application.dataPath, "Oculus/VR/Editor/network_sec_config.xml");
+							string xmlDirectory = Path.Combine(path, "src/main/res/xml");
+							try
+							{
+								if (!Directory.Exists(xmlDirectory))
+								{
+									Directory.CreateDirectory(xmlDirectory);
+								}
+								File.Copy(securityConfigFile, Path.Combine(xmlDirectory, "network_sec_config.xml"), true);
+							}
+							catch (Exception e)
+							{
+								UnityEngine.Debug.LogError(e.Message);
+							}
+						}
+					}
+				}
+				doc.Save(manifestFolder + "/AndroidManifest.xml");
 			}
 		}
 		catch (Exception e)
@@ -239,7 +282,7 @@ public class OVRGradleGeneration
 	}
 #endif
 
-	public void OnPostprocessBuild(BuildReport report)
+					public void OnPostprocessBuild(BuildReport report)
 	{
 #if UNITY_ANDROID
 		if(autoIncrementVersion)
@@ -355,7 +398,7 @@ public class OVRGradleGeneration
 			DataReceivedEventHandler outputRecieved = new DataReceivedEventHandler(
 				(s, e) =>
 				{
-					if (e.Data.Length != 0 && !e.Data.Contains("\u001b"))
+					if (e.Data != null && e.Data.Length != 0 && !e.Data.Contains("\u001b"))
 					{
 						if (e.Data.Contains("free_cache"))
 						{
