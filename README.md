@@ -18,7 +18,7 @@ Oculus Integrationは1.40で18.4系を正式にサポートしました
 LTSですし18.4系がおすすめです。
 
 ## 使用ライブラリ
-* Oculus Integration v1.41  
+* Oculus Integration v1.42  
   プロジェクト内に同梱しています
 
 ## 各シーンの概要
