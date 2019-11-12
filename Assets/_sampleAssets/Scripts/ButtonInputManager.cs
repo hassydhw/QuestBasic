@@ -85,6 +85,11 @@ public class ButtonInputManager : MonoBehaviour
             //右スティックを押した際の処理
             buttonDownText.text = "R_StickButton pressed";
         }
+        if (OVRInput.GetDown(OVRInput.RawButton.Start))
+        {
+            //左のスタートボタン
+            buttonDownText.text = "Start Button pressed";
+        }
     }
 
     private void CheckButtonTouch()
