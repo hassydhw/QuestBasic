@@ -1,3 +1,4 @@
+#if UNITY_EDITOR_WIN
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +8,6 @@ using System.IO;
 
 using UnityEngine;
 using UnityEditor;
-
 public class OVRBundleTool : EditorWindow
 {
 	private static List<EditorSceneInfo> buildableScenes;
@@ -23,6 +23,9 @@ public class OVRBundleTool : EditorWindow
 	private bool forceRestart = false;
 	private bool showBundleManagement = false;
 	private bool showOther = false;
+
+	// Needed to ensure that APK checking does happen during editor start up, but will still happen when the window is opened/updated
+	private static bool panelInitialized = false;
 
 	private enum ApkStatus
 	{
@@ -64,7 +67,7 @@ public class OVRBundleTool : EditorWindow
 
 	private static ApkStatus currentApkStatus;
 
-	[MenuItem("Oculus/OVR Build/OVR Scene Quick Preview #p", false, 10)]
+	[MenuItem("Oculus/OVR Build/OVR Scene Quick Preview %l", false, 10)]
 	static void Init()
 	{
 		currentApkStatus = ApkStatus.UNKNOWN;
@@ -85,15 +88,20 @@ public class OVRBundleTool : EditorWindow
 
 	public static void InitializePanel()
 	{
+		panelInitialized = true;
 		GetScenesFromBuildSettings();
-		CheckForTransitionAPK();
-
 		EditorBuildSettings.sceneListChanged += GetScenesFromBuildSettings;
 	}
 
 	private void OnGUI()
 	{
 		this.titleContent.text = "OVR Scene Quick Preview";
+
+		if (panelInitialized)
+		{
+			CheckForTransitionAPK();
+			panelInitialized = false;
+		}
 
 		if (logBoxStyle == null)
 		{
@@ -282,6 +290,14 @@ public class OVRBundleTool : EditorWindow
 					OpenBuildSettingsWindow();
 				}
 
+				GUIContent uninstallTxt = new GUIContent("Uninstall APK");
+				var uninstallBtnRt = GUILayoutUtility.GetRect(uninstallTxt, GUI.skin.button, GUILayout.ExpandWidth(true));
+				if (GUI.Button(uninstallBtnRt, uninstallTxt))
+				{
+					OVRBundleManager.UninstallAPK();
+					CheckForTransitionAPK();
+				}
+
 				GUIContent clearLogTxt = new GUIContent("Clear Log");
 				var clearLogBtnRt = GUILayoutUtility.GetRect(clearLogTxt, GUI.skin.button, GUILayout.ExpandWidth(true));
 				if (GUI.Button(clearLogBtnRt, clearLogTxt))
@@ -354,7 +370,7 @@ public class OVRBundleTool : EditorWindow
 		if (adbTool.isReady)
 		{
 			string matchedPackageList, error;
-			var transitionPackageName = PlayerSettings.applicationIdentifier;
+			var transitionPackageName = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
 			if (useOptionalTransitionApkPackage)
 			{
 				transitionPackageName += ".transition";
@@ -466,4 +482,10 @@ public class OVRBundleTool : EditorWindow
 		}
 		return eEnum.ToString();
 	}
+
+	public static bool GetUseOptionalTransitionApkPackage()
+	{
+		return useOptionalTransitionApkPackage;
+	}
 }
+#endif
