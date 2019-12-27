@@ -2744,7 +2744,7 @@ MonoBehaviour:
   _headPoseRelativeOffsetRotation: {x: 0, y: 0, z: 0}
   _headPoseRelativeOffsetTranslation: {x: 0, y: 0, z: 0}
   profilerTcpPort: 32419
-  expandMixedRealityCapturePropertySheet: 1
+  expandMixedRealityCapturePropertySheet: 0
   enableMixedReality: 0
   compositionMethod: 0
   extraHiddenLayers:
