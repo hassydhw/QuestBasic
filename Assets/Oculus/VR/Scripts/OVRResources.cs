@@ -5,8 +5,6 @@ public class OVRResources : MonoBehaviour
 {
 	private static AssetBundle resourceBundle;
 	private static List<string> assetNames;
-	
-	private static Dictionary<AsyncOperation, ResourceRequest> asyncMap = new Dictionary<AsyncOperation, ResourceRequest>();
 
 	public static UnityEngine.Object Load(string path)
 	{

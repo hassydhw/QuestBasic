@@ -27,9 +27,7 @@ using System.Xml;
 using System.Diagnostics;
 using System.Threading;
 using UnityEditor;
-#if UNITY_ANDROID
 using UnityEditor.Android;
-#endif
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEditor.Build;
@@ -40,11 +38,8 @@ using System;
 
 [InitializeOnLoad]
 public class OVRGradleGeneration
-#if UNITY_2018_1_OR_NEWER
-	: IPreprocessBuildWithReport, IPostprocessBuildWithReport
-#if UNITY_ANDROID
-	, IPostGenerateGradleAndroidProject
-#endif
+#if UNITY_2018_2_OR_NEWER
+	: IPreprocessBuildWithReport, IPostprocessBuildWithReport, IPostGenerateGradleAndroidProject
 {
 	public OVRADBTool adbTool;
 	public Process adbProcess;
@@ -53,9 +48,11 @@ public class OVRGradleGeneration
 	static private System.DateTime buildStartTime;
 	static private System.Guid buildGuid;
 
+#if UNITY_ANDROID
 	private const string prefName = "OVRAutoIncrementVersionCode_Enabled";
 	private const string menuItemAutoIncVersion = "Oculus/Tools/Auto Increment Version Code";
 	static bool autoIncrementVersion = false;
+#endif
 
 	static OVRGradleGeneration()
 	{
@@ -110,7 +107,9 @@ public class OVRGradleGeneration
 
 		OVRPlugin.AddCustomMetadata("build_guid", buildGuid.ToString());
 		OVRPlugin.AddCustomMetadata("target_platform", report.summary.platform.ToString());
+#if !UNITY_2019_3_OR_NEWER
 		OVRPlugin.AddCustomMetadata("scripting_runtime_version", UnityEditor.PlayerSettings.scriptingRuntimeVersion.ToString());
+#endif
 		if (report.summary.platform == UnityEditor.BuildTarget.StandaloneWindows
 			|| report.summary.platform == UnityEditor.BuildTarget.StandaloneWindows64)
 		{
@@ -127,7 +126,7 @@ public class OVRGradleGeneration
 	public void OnPostGenerateGradleAndroidProject(string path)
 	{
 		UnityEngine.Debug.Log("OVRGradleGeneration triggered.");
-#if UNITY_ANDROID
+
 		var targetOculusPlatform = new List<string>();
 		if (OVRDeviceSelector.isTargetDeviceGearVrOrGo)
 		{
@@ -169,10 +168,8 @@ public class OVRGradleGeneration
 		}
 
 		PatchAndroidManifest(path);
-#endif
 	}
 
-#if UNITY_ANDROID
 	public void PatchAndroidManifest(string path)
 	{
 		string manifestFolder = Path.Combine(path, "src/main");
@@ -229,6 +226,57 @@ public class OVRGradleGeneration
 					}
 				}
 
+				// If Quest is the target device, add the handtracking manifest tags if needed
+				// Mapping of project setting to manifest setting:
+				// OVRProjectConfig.HandTrackingSupport.ControllersOnly => manifest entry not present
+				// OVRProjectConfig.HandTrackingSupport.ControllersAndHands => manifest entry present and required=false
+				// OVRProjectConfig.HandTrackingSupport.HandsOnly => manifest entry present and required=true
+				if (OVRDeviceSelector.isTargetDeviceQuest)
+				{
+					OVRProjectConfig.HandTrackingSupport targetHandTrackingSupport = OVRProjectConfig.GetProjectConfig().handTrackingSupport;
+					bool handTrackingEntryNeeded = (targetHandTrackingSupport != OVRProjectConfig.HandTrackingSupport.ControllersOnly);
+					if (handTrackingEntryNeeded)
+					{
+						// uses-feature: <uses-feature android:name="oculus.software.handtracking" android:required="false" />
+						XmlNodeList manifestUsesFeatureNodes = doc.SelectNodes("/manifest/uses-feature");
+						bool foundHandTrackingFeature = false;
+						foreach (XmlElement e in manifestUsesFeatureNodes)
+						{
+							string attr = e.GetAttribute("name", androidNamepsaceURI);
+							if (attr == "oculus.software.handtracking")
+								foundHandTrackingFeature = true;
+						}
+						//If the tag already exists, don't patch with a new one. If it doesn't, we add it.
+						if (!foundHandTrackingFeature)
+						{
+							XmlNode manifestElement = doc.SelectSingleNode("/manifest");
+							XmlElement handTrackingFeature = doc.CreateElement("uses-feature");
+							handTrackingFeature.SetAttribute("name", androidNamepsaceURI, "oculus.software.handtracking");
+							string tagRequired = (targetHandTrackingSupport == OVRProjectConfig.HandTrackingSupport.HandsOnly) ? "true" : "false";
+							handTrackingFeature.SetAttribute("required", androidNamepsaceURI, tagRequired);
+							manifestElement.AppendChild(handTrackingFeature);
+						}
+
+						// uses-permission: <uses-permission android:name="oculus.permission.handtracking" />
+						XmlNodeList manifestUsesPermissionNodes = doc.SelectNodes("/manifest/uses-permission");
+						bool foundHandTrackingPermission = false;
+						foreach (XmlElement e in manifestUsesPermissionNodes)
+						{
+							string attr = e.GetAttribute("name", androidNamepsaceURI);
+							if (attr == "oculus.permission.handtracking")
+								foundHandTrackingPermission = true;
+						}
+						//If the tag already exists, don't patch with a new one. If it doesn't, we add it.
+						if (!foundHandTrackingPermission)
+						{
+							XmlNode manifestElement = doc.SelectSingleNode("/manifest");
+							XmlElement handTrackingPermission = doc.CreateElement("uses-permission");
+							handTrackingPermission.SetAttribute("name", androidNamepsaceURI, "oculus.permission.handtracking");
+							manifestElement.AppendChild(handTrackingPermission);
+						}
+					}
+				}
+
 				XmlElement applicationNode = (XmlElement)doc.SelectSingleNode("/manifest/application");
 				if(applicationNode != null)
 				{
@@ -240,6 +288,26 @@ public class OVRGradleGeneration
 					if (applicationNode.GetAttribute("android:icon") == null)
 					{
 						applicationNode.SetAttribute("icon", androidNamepsaceURI, "@mipmap/app_icon");
+					}
+
+					// Check for VR tag, if missing, append it
+					bool vrTagFound = false;
+					XmlNodeList appNodeList = applicationNode.ChildNodes;
+					foreach (XmlElement e in appNodeList)
+					{
+						if (e.GetAttribute("android:name") == "com.samsung.android.vr.application.mode")
+						{
+							vrTagFound = true;
+							break;
+						}
+					}
+
+					if (!vrTagFound)
+					{
+						XmlElement vrTag = doc.CreateElement("meta-data");
+						vrTag.SetAttribute("name", androidNamepsaceURI, "com.samsung.android.vr.application.mode");
+						vrTag.SetAttribute("value", androidNamepsaceURI, "vr_only");
+						applicationNode.AppendChild(vrTag); ;
 					}
 
 					// Disable allowBackup in manifest and add Android NSC XML file
@@ -280,9 +348,8 @@ public class OVRGradleGeneration
 			UnityEngine.Debug.LogError(e.Message);
 		}
 	}
-#endif
 
-					public void OnPostprocessBuild(BuildReport report)
+	public void OnPostprocessBuild(BuildReport report)
 	{
 #if UNITY_ANDROID
 		if(autoIncrementVersion)
@@ -458,6 +525,6 @@ public class OVRGradleGeneration
 	}
 #endif
 #else
-		{
+{
 #endif
-		}
+}
