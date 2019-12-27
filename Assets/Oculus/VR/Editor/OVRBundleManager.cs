@@ -1,3 +1,4 @@
+#if UNITY_EDITOR_WIN
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +24,6 @@ public class OVRBundleManager
 
 	private static string externalSceneCache;
 	private static string transitionScenePath;
-	private static string transitionApkOptionalIdentifier;
 
 	private static string projectDefaultAppIdentifier;
 	private static string projectDefaultVersion;
@@ -38,17 +38,6 @@ public class OVRBundleManager
 	public static void BuildDeployTransitionAPK(bool useOptionalTransitionApkPackage)
 	{
 		OVRBundleTool.PrintLog("Building and deploying transition APK  . . . ", true);
-
-		// Append .transition to default app package name to optionally allow both
-		// full build apk and transition apk to be installed on device 
-		if (useOptionalTransitionApkPackage)
-		{
-			transitionApkOptionalIdentifier = ".transition";
-		}
-		else
-		{
-			transitionApkOptionalIdentifier = "";
-		}
 
 		if (!Directory.Exists(BUNDLE_MANAGER_OUTPUT_PATH))
 		{
@@ -110,9 +99,9 @@ public class OVRBundleManager
 	private static void PrebuildProjectSettingUpdate()
 	{
 		// Modify application identifier for transition APK
-		projectDefaultAppIdentifier = PlayerSettings.applicationIdentifier;
-		PlayerSettings.applicationIdentifier = projectDefaultAppIdentifier 
-			+ transitionApkOptionalIdentifier;
+		projectDefaultAppIdentifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
+		PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, 
+			projectDefaultAppIdentifier + GetTransitionApkOptionalIdentifier());
 
 		// Set VersionCode as a unique identifier for transition APK
 		projectDefaultVersion = PlayerSettings.bundleVersion;
@@ -154,7 +143,8 @@ public class OVRBundleManager
 	private static void PostbuildProjectSettingUpdate()
 	{
 		// Restore application identifier
-		PlayerSettings.applicationIdentifier = projectDefaultAppIdentifier;
+		PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android,
+			projectDefaultAppIdentifier);
 
 		// Restore version setting
 		PlayerSettings.bundleVersion = projectDefaultVersion;
@@ -188,8 +178,8 @@ public class OVRBundleManager
 	// its dependencies such as scenes that are loaded additively
 	public static void BuildDeployScenes(List<OVRBundleTool.EditorSceneInfo> sceneList, bool forceRestart)
 	{
-		externalSceneCache = EXTERNAL_STORAGE_PATH + "/" + PlayerSettings.applicationIdentifier 
-			+ transitionApkOptionalIdentifier + "/cache/scenes";
+		externalSceneCache = EXTERNAL_STORAGE_PATH + "/" + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android)
+			+ GetTransitionApkOptionalIdentifier() + "/cache/scenes";
 
 		BuildSceneBundles(sceneList);
 		if (DeploySceneBundles(sceneList))
@@ -314,15 +304,19 @@ public class OVRBundleManager
 					// Each asset is keyed by full path as a unique identifier
 					if (!uniqueAssetInSceneBundle.ContainsKey(asset))
 					{
-						uniqueAssetInSceneBundle[asset] = assetParent;
-
-						if (assetParent != "resources")
+						var assetObject = (UnityEngine.Object)AssetDatabase.LoadAssetAtPath(asset, typeof(UnityEngine.Object));
+						if (assetObject == null || (assetObject.hideFlags & HideFlags.DontSaveInBuild) == 0)
 						{
-							if (!extToAssetList.ContainsKey(ext))
+							uniqueAssetInSceneBundle[asset] = assetParent;
+
+							if (assetParent != "resources")
 							{
-								extToAssetList[ext] = new List<string>();
+								if (!extToAssetList.ContainsKey(ext))
+								{
+									extToAssetList[ext] = new List<string>();
+								}
+								extToAssetList[ext].Add(asset);
 							}
-							extToAssetList[ext].Add(asset);
 						}
 					}
 				}
@@ -535,17 +529,46 @@ public class OVRBundleManager
 		if (adbTool.isReady)
 		{
 			string output, error;
-			string playerActivityName = "\"" + Application.identifier + transitionApkOptionalIdentifier 
-				+ "/com.unity3d.player.UnityPlayerActivity\"";
+			string appPackagename = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android)
+				+ GetTransitionApkOptionalIdentifier();
+			string playerActivityName = "\"" + appPackagename + "/com.unity3d.player.UnityPlayerActivity\"";
 			string[] appStartCommand = { "-d shell", "am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -S -f 0x10200000 -n", playerActivityName };
 			if (adbTool.RunCommand(appStartCommand, null, out output, out error) == 0)
 			{
 				OVRBundleTool.PrintSuccess();
+				OVRBundleTool.PrintLog("App package " + appPackagename + " is launched.");
 				return true;
 			}
 
 			string completeError = "Failed to launch application. Try launching it manually through the device.\n" + (string.IsNullOrEmpty(error) ? output : error);
 			OVRBundleTool.PrintError(completeError);
+		}
+		else
+		{
+			OVRBundleTool.PrintError(ADB_TOOL_INITIALIZE_ERROR);
+		}
+		return false;
+	}
+
+	public static bool UninstallAPK()
+	{
+		OVRBundleTool.PrintLog("Uninstalling Application . . .");
+
+		OVRADBTool adbTool = new OVRADBTool(OVRConfig.Instance.GetAndroidSDKPath());
+		if (adbTool.isReady)
+		{
+			string output, error;
+			string appPackagename = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android)
+				+ GetTransitionApkOptionalIdentifier();
+			string[] appStartCommand = { "-d shell", "pm uninstall", appPackagename };
+			if (adbTool.RunCommand(appStartCommand, null, out output, out error) == 0)
+			{
+				OVRBundleTool.PrintSuccess();
+				OVRBundleTool.PrintLog("App package " + appPackagename + " is uninstalled.");
+				return true;
+			}
+
+			OVRBundleTool.PrintError("Failed to uninstall APK.");
 		}
 		else
 		{
@@ -610,4 +633,22 @@ public class OVRBundleManager
 		string[] resourceDirectories = Directory.GetDirectories("Assets", "Resources", SearchOption.AllDirectories);
 		return resourceDirectories.Length > 0;
 	}
+
+	private static string GetTransitionApkOptionalIdentifier()
+	{
+		string transitionApkOptionalIdentifier;
+		// Check option value from editor UI
+		if (OVRBundleTool.GetUseOptionalTransitionApkPackage())
+		{
+			// Append .transition to default app package name to optionally allow both
+			// full build apk and transition apk to be installed on device 
+			transitionApkOptionalIdentifier = ".transition";
+		}
+		else
+		{
+			transitionApkOptionalIdentifier = "";
+		}
+		return transitionApkOptionalIdentifier;
+	}
 }
+#endif
