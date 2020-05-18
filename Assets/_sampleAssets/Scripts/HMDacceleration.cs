@@ -21,7 +21,7 @@ public class HMDacceleration : MonoBehaviour
         //        logMesh.text = _ovrDisplay.angularVelocity.ToString("F2");// it works
 
         //        logMesh.text = OVRManager.display.angularAcceleration.ToString("F2");// it works
-        logMesh.text = OVRManager.display.angularVelocity.ToString("F2");// it works
+        logMesh.text = OVRManager.display.angularVelocity.ToString("F1");// it works
 
 
 
