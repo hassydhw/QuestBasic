@@ -16,7 +16,9 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 2019.2系なら問題なく動くと思います  
 
 ## 使用ライブラリ
-* Oculus Integration version16.0  
+* Oculus Integration version18.0  
+<https://developer.oculus.com/downloads/package/unity-integration/>
+
   プロジェクト内に同梱しています、
   以前は1.xxのようなバージョンの記述でしたが、最近のバージョンの記述は変わったようです
 
