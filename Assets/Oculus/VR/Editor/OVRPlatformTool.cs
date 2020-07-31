@@ -438,16 +438,25 @@ namespace Assets.Oculus.VR.Editor
 				updateThread.Start();
 			}
 
-			var thread = new Thread(delegate () {
-				// Wait for update process to finish before starting upload process
-				while (activeProcess)
+			string uploadCommand;
+			if (genUploadCommand(targetPlatform, out uploadCommand))
+			{
+				var thread = new Thread(delegate ()
 				{
-					Thread.Sleep(100);
-				}
-				retryCount = 0;
-				Command(targetPlatform, dataPath);
-			});
-			thread.Start();
+					// Wait for update process to finish before starting upload process
+					while (activeProcess)
+					{
+						Thread.Sleep(100);
+					}
+					retryCount = 0;
+					Command(targetPlatform, dataPath, uploadCommand);
+				});
+				thread.Start();
+			}
+			else
+			{
+				UnityEngine.Debug.LogError("Failed to generated upload command.");
+			}
 		}
 
 		private static string CheckForPlatformUtil(string dataPath)
@@ -587,51 +596,47 @@ namespace Assets.Oculus.VR.Editor
 			}
 		}
 
-		static void Command(TargetPlatform targetPlatform, string dataPath)
+		static void Command(TargetPlatform targetPlatform, string dataPath, string uploadCommand)
 		{
 			string platformUtilPath = CheckForPlatformUtil(dataPath);
 
-			string args;
-			if (genUploadCommand(targetPlatform, out args))
-			{
-				activeProcess = true;
-				InitializePlatformUtilProcess(platformUtilPath, args);
+			activeProcess = true;
+			InitializePlatformUtilProcess(platformUtilPath, uploadCommand);
 
-				ovrPlatUtilProcess.Exited += new EventHandler(
-					(s, e) =>
-					{
-						activeProcess = false;
-					}
-				);
+			ovrPlatUtilProcess.Exited += new EventHandler(
+				(s, e) =>
+				{
+					activeProcess = false;
+				}
+			);
 
-				ovrPlatUtilProcess.OutputDataReceived += new DataReceivedEventHandler(
-					(s, e) =>
-					{
-						if (e.Data != null && e.Data.Length != 0 && !e.Data.Contains("\u001b"))
-						{
-							OVRPlatformTool.log += e.Data + "\n";
-						}
-					}
-				);
-				ovrPlatUtilProcess.ErrorDataReceived += new DataReceivedEventHandler(
-					(s, e) =>
+			ovrPlatUtilProcess.OutputDataReceived += new DataReceivedEventHandler(
+				(s, e) =>
+				{
+					if (e.Data != null && e.Data.Length != 0 && !e.Data.Contains("\u001b"))
 					{
 						OVRPlatformTool.log += e.Data + "\n";
 					}
-				);
-
-				try
-				{
-					ovrPlatUtilProcess.Start();
-					ovrPlatUtilProcess.BeginOutputReadLine();
-					ovrPlatUtilProcess.BeginErrorReadLine();
 				}
-				catch
+			);
+			ovrPlatUtilProcess.ErrorDataReceived += new DataReceivedEventHandler(
+				(s, e) =>
 				{
-					if (ThrowPlatformUtilStartupError(platformUtilPath))
-					{
-						Command(targetPlatform, dataPath);
-					}
+					OVRPlatformTool.log += e.Data + "\n";
+				}
+			);
+
+			try
+			{
+				ovrPlatUtilProcess.Start();
+				ovrPlatUtilProcess.BeginOutputReadLine();
+				ovrPlatUtilProcess.BeginErrorReadLine();
+			}
+			catch
+			{
+				if (ThrowPlatformUtilStartupError(platformUtilPath))
+				{
+					Command(targetPlatform, dataPath, uploadCommand);
 				}
 			}
 		}
@@ -1044,7 +1049,6 @@ namespace Assets.Oculus.VR.Editor
 		private static IEnumerator ProvisionPlatformUtil(string dataPath)
 		{
 			UnityEngine.Debug.Log("Started Provisioning Oculus Platform Util");
-#if UNITY_2018_3_OR_NEWER
 			var webRequest = new UnityWebRequest(urlPlatformUtil, UnityWebRequest.kHttpVerbGET);
 			string path = dataPath;
 			webRequest.downloadHandler = new DownloadHandlerFile(path);
@@ -1064,32 +1068,6 @@ namespace Assets.Oculus.VR.Editor
 			}
 			SetDirtyOnGUIChange();
 			yield return webOp;
-#else
-			using (WWW www = new WWW(urlPlatformUtil))
-			{
-				float timer = 0;
-				float timeOut = 60;
-				yield return www;
-				while (!www.isDone && timer < timeOut)
-				{
-					timer += Time.deltaTime;
-					if (www.error != null)
-					{
-						UnityEngine.Debug.Log("Download error: " + www.error);
-						break;
-					}
-					OVRPlatformTool.log = string.Format("Downloading.. {0:P1}", www.progress);
-					SetDirtyOnGUIChange();
-					yield return new WaitForSeconds(1f);
-				}
-				if (www.isDone)
-				{
-					System.IO.File.WriteAllBytes(dataPath, www.bytes);
-					OVRPlatformTool.log = "Completed Provisioning Oculus Platform Util\n";
-					SetDirtyOnGUIChange();
-				}
-			}
-#endif
 		}
 
 		private static void DrawAssetConfigList(Rect rect)
