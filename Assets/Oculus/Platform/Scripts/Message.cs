@@ -113,6 +113,7 @@ namespace Oculus.Platform
       LanguagePack_SetCurrent                             = 0x5B4FBBE0,
       Leaderboard_GetEntries                              = 0x5DB3474C,
       Leaderboard_GetEntriesAfterRank                     = 0x18378BEF,
+      Leaderboard_GetEntriesByIds                         = 0x39607BFC,
       Leaderboard_GetNextEntries                          = 0x4E207CD9,
       Leaderboard_GetPreviousEntries                      = 0x4901DAC0,
       Leaderboard_WriteEntry                              = 0x117FC8FE,
@@ -331,6 +332,7 @@ namespace Oculus.Platform
     public virtual NetSyncSessionList GetNetSyncSessionList() { return null; }
     public virtual NetSyncSessionsChangedNotification GetNetSyncSessionsChangedNotification() { return null; }
     public virtual NetSyncSetSessionPropertyResult GetNetSyncSetSessionPropertyResult() { return null; }
+    public virtual NetSyncVoipAttenuationValueList GetNetSyncVoipAttenuationValueList() { return null; }
     public virtual OrgScopedID GetOrgScopedID() { return null; }
     public virtual Party GetParty() { return null; }
     public virtual PartyID GetPartyID() { return null; }
@@ -482,6 +484,7 @@ namespace Oculus.Platform
 
         case Message.MessageType.Leaderboard_GetEntries:
         case Message.MessageType.Leaderboard_GetEntriesAfterRank:
+        case Message.MessageType.Leaderboard_GetEntriesByIds:
         case Message.MessageType.Leaderboard_GetNextEntries:
         case Message.MessageType.Leaderboard_GetPreviousEntries:
           message = new MessageWithLeaderboardEntryList(messageHandle);
@@ -1176,6 +1179,18 @@ namespace Oculus.Platform
       var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
       var obj = CAPI.ovr_Message_GetNetSyncSetSessionPropertyResult(msg);
       return new NetSyncSetSessionPropertyResult(obj);
+    }
+
+  }
+  public class MessageWithNetSyncVoipAttenuationValueList : Message<NetSyncVoipAttenuationValueList>
+  {
+    public MessageWithNetSyncVoipAttenuationValueList(IntPtr c_message) : base(c_message) { }
+    public override NetSyncVoipAttenuationValueList GetNetSyncVoipAttenuationValueList() { return Data; }
+    protected override NetSyncVoipAttenuationValueList GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetNetSyncVoipAttenuationValueArray(msg);
+      return new NetSyncVoipAttenuationValueList(obj);
     }
 
   }
