@@ -14,8 +14,21 @@ ANY KIND, either express or implied. See the License for the specific language g
 permissions and limitations under the License.
 ************************************************************************************/
 
+#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#define USING_XR_SDK
+#endif
+
+#if UNITY_2020_1_OR_NEWER
+#define REQUIRES_XR_SDK
+#endif
+
 using UnityEngine;
 using System.Collections;
+
+#if USING_XR_SDK
+using UnityEngine.XR;
+using UnityEngine.Experimental.XR;
+#endif
 
 /// <summary>
 /// This is a simple behavior that can be attached to a parent of the CameraRig in order
@@ -84,7 +97,18 @@ public class OVRDebugHeadController : MonoBehaviour
 			transform.position += fwdMove + strafeMove;
 		}
 
-		if ( !UnityEngine.XR.XRDevice.isPresent && ( AllowYawLook || AllowPitchLook ) )
+		bool hasDevice = false;
+#if USING_XR_SDK
+		XRDisplaySubsystem currentDisplaySubsystem = OVRManager.GetCurrentDisplaySubsystem();
+		if (currentDisplaySubsystem != null)
+			hasDevice = currentDisplaySubsystem.running;
+#elif REQUIRES_XR_SDK
+		hasDevice = false;
+#else
+		hasDevice = UnityEngine.XR.XRDevice.isPresent;
+#endif
+
+		if ( !hasDevice && ( AllowYawLook || AllowPitchLook ) )
 		{
 			Quaternion r = transform.rotation;
 			if ( AllowYawLook )

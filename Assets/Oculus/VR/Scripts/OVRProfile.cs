@@ -17,7 +17,6 @@ permissions and limitations under the License.
 using UnityEngine;
 using System.Collections;
 using System.Threading;
-using VR = UnityEngine.VR;
 
 /// <summary>
 /// (Deprecated) Contains information about the user's preferences and body dimensions.

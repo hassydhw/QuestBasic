@@ -23,11 +23,6 @@ using System.Collections;
 public class OVRControllerHelper : MonoBehaviour
 {
 	/// <summary>
-	/// The root GameObject that represents the Oculus Go Controller model.
-	/// </summary>
-	public GameObject m_modelOculusGoController;
-
-	/// <summary>
 	/// The root GameObject that represents the Oculus Touch for Quest And RiftS Controller model (Left).
 	/// </summary>
 	public GameObject m_modelOculusTouchQuestAndRiftSLeftController;
@@ -54,7 +49,8 @@ public class OVRControllerHelper : MonoBehaviour
 
 	private enum ControllerType
 	{
-		Go, QuestAndRiftS, Rift
+		QuestAndRiftS = 1,
+		Rift = 2,
 	}
 
 	private ControllerType activeControllerType = ControllerType.Rift;
@@ -67,9 +63,6 @@ public class OVRControllerHelper : MonoBehaviour
 		OVRPlugin.SystemHeadset headset = OVRPlugin.GetSystemHeadsetType();
 		switch (headset)
 		{
-			case OVRPlugin.SystemHeadset.Oculus_Go:
-				activeControllerType = ControllerType.Go;
-				break;
 			case OVRPlugin.SystemHeadset.Rift_CV1:
 				activeControllerType = ControllerType.Rift;
 				break;
@@ -79,28 +72,6 @@ public class OVRControllerHelper : MonoBehaviour
 		}
 
 		Debug.LogFormat("OVRControllerHelp: Active controller type: {0} for product {1}", activeControllerType, OVRPlugin.productName);
-		if (activeControllerType != ControllerType.Go)
-		{
-			if (m_controller == OVRInput.Controller.LTrackedRemote)
-			{
-				m_controller = OVRInput.Controller.LTouch;
-			}
-			else if (m_controller == OVRInput.Controller.RTrackedRemote)
-			{
-				m_controller = OVRInput.Controller.RTouch;
-			}
-		}
-		else
-		{
-			if (m_controller == OVRInput.Controller.LTouch)
-			{
-				m_controller = OVRInput.Controller.LTrackedRemote;
-			}
-			else if (m_controller == OVRInput.Controller.RTouch)
-			{
-				m_controller = OVRInput.Controller.RTrackedRemote;
-			}
-		}
 	}
 
 	void Update()
@@ -109,17 +80,8 @@ public class OVRControllerHelper : MonoBehaviour
 
 		if ((controllerConnected != m_prevControllerConnected) || !m_prevControllerConnectedCached)
 		{
-			if (activeControllerType == ControllerType.Go)
+			if (activeControllerType == ControllerType.Rift)
 			{
-				m_modelOculusGoController.SetActive(true);
-				m_modelOculusTouchQuestAndRiftSLeftController.SetActive(false);
-				m_modelOculusTouchQuestAndRiftSRightController.SetActive(false);
-				m_modelOculusTouchRiftLeftController.SetActive(false);
-				m_modelOculusTouchRiftRightController.SetActive(false);
-			}
-			else if (activeControllerType == ControllerType.Rift)
-			{
-				m_modelOculusGoController.SetActive(false);
 				m_modelOculusTouchQuestAndRiftSLeftController.SetActive(false);
 				m_modelOculusTouchQuestAndRiftSRightController.SetActive(false);
 				m_modelOculusTouchRiftLeftController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.LTouch));
@@ -127,7 +89,6 @@ public class OVRControllerHelper : MonoBehaviour
 			}
 			else /*if (activeControllerType == ControllerType.QuestAndRiftS)*/
 			{
-				m_modelOculusGoController.SetActive(false);
 				m_modelOculusTouchQuestAndRiftSLeftController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.LTouch));
 				m_modelOculusTouchQuestAndRiftSRightController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.RTouch));
 				m_modelOculusTouchRiftLeftController.SetActive(false);
