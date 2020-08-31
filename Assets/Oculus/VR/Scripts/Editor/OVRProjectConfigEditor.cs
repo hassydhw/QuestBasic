@@ -54,8 +54,25 @@ public class OVRProjectConfigEditor : Editor
 			"If checked, the new overlay will be displayed when the user presses the home button. The game will not be paused, but will now receive InputFocusLost and InputFocusAcquired events."),
 			ref projectConfig.focusAware, ref hasModified);
 
+		if (!projectConfig.focusAware && projectConfig.requiresSystemKeyboard)
+		{
+			projectConfig.requiresSystemKeyboard = false;
+			hasModified = true;
+		}
+
 		// Hand Tracking Support
 		OVREditorUtil.SetupEnumField(projectConfig, "Hand Tracking Support", ref projectConfig.handTrackingSupport, ref hasModified);
+
+		// System Keyboard Support
+		OVREditorUtil.SetupBoolField(projectConfig, new GUIContent("Requires System Keyboard",
+			"*Requires Focus Awareness* If checked, the Oculus System keyboard will be enabled for Unity input fields and any calls to open/close the Unity TouchScreenKeyboard."),
+			ref projectConfig.requiresSystemKeyboard, ref hasModified);
+
+		if (projectConfig.requiresSystemKeyboard && !projectConfig.focusAware)
+		{
+			projectConfig.focusAware = true;
+			hasModified = true;
+		}
 
 		EditorGUI.EndDisabledGroup();
 		EditorGUILayout.Space();

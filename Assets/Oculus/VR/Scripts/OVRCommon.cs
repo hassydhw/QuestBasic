@@ -18,6 +18,10 @@ permissions and limitations under the License.
 #define USING_XR_SDK
 #endif
 
+#if UNITY_2020_1_OR_NEWER
+#define REQUIRES_XR_SDK
+#endif
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -266,6 +270,8 @@ public static class OVRNodeStateProperties
 		XRDisplaySubsystem currentDisplaySubsystem = OVRManager.GetCurrentDisplaySubsystem();
 		if (currentDisplaySubsystem != null)
 			return currentDisplaySubsystem.running;				//In 2019.3, this should be changed to currentDisplaySubsystem.isConnected, but this is a fine placeholder for now.
+		return false;
+#elif REQUIRES_XR_SDK
 		return false;
 #else
 		return Device.isPresent;

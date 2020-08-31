@@ -109,7 +109,6 @@ public class OVRHandTest : MonoBehaviour
 
 		monitors = new List<BoolMonitor>()
 		{
-			new BoolMonitor("WasRecentered",                    () => OVRInput.GetControllerWasRecentered()),
 			new BoolMonitor("One",                              () => OVRInput.Get(OVRInput.Button.One)),
 		};
 
