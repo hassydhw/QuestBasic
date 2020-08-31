@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using QuestBasics;
 
 public class versionTextScript : MonoBehaviour
 {
@@ -14,6 +15,5 @@ public class versionTextScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
     }
 }
