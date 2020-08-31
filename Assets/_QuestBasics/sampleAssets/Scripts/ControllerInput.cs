@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class ButtonInputManager : MonoBehaviour
+public class ControllerInput : MonoBehaviour
 {
 
     public TextMesh buttonTouchText;

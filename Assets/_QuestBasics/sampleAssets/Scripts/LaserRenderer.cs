@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ControllerLineRenderer : MonoBehaviour
+public class LaserRenderer : MonoBehaviour
 {
     public Transform rayTransform = null;
     public LineRenderer lineRenderer = null;
