@@ -1,0 +1,16 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+
+namespace QuestBasics
+{
+    public class ConfigSettings : MonoBehaviour
+    {
+        //バージョン　１＋OculusIntegrationの対応バージョン　＋　0から始めるマイナーバージョン
+        //中身大きく変えたら2にあげる
+        // public static string versionNumber = "1.16.0";//20200522　バージョン管理開始
+        // public static string versionNumber = "1.18.0"; //20200522　SDK18.0対応、EventSystemのPrefab化
+        public static string versionNumber = "1.19.0"; //20200831　SDK19.1対応
+    }
+}

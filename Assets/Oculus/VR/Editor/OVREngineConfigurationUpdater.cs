@@ -23,6 +23,10 @@ limitations under the License.
 #define USING_XR_SDK
 #endif
 
+#if UNITY_2020_1_OR_NEWER
+#define REQUIRES_XR_SDK
+#endif
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -83,9 +87,6 @@ class OVREngineConfigurationUpdater
 		OVRPlugin.AddCustomMetadata("build_target", EditorUserBuildSettings.activeBuildTarget.ToString());
 		EnforceAndroidSettings();
 		EnforceInputManagerBindings();
-#if UNITY_ANDROID
-		EnforceOSIG();
-#endif
 	}
 
 	static void OnUpdate()
@@ -94,9 +95,7 @@ class OVREngineConfigurationUpdater
 			return;
 		
 		EnforceBundleId();
-#if !USING_XR_SDK
 		EnforceVRSupport();
-#endif
 		EnforceInstallLocation();
 	}
 
@@ -112,7 +111,7 @@ class OVREngineConfigurationUpdater
 			PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
 		}
 
-#if !USING_XR_SDK
+#if !USING_XR_SDK && !REQUIRES_XR_SDK
 		if (!PlayerSettings.virtualRealitySupported)
 		{
 			// NOTE: This value should not affect the main window surface
@@ -141,6 +140,7 @@ class OVREngineConfigurationUpdater
 
 	static void EnforceVRSupport()
 	{
+#if !USING_XR_SDK && !REQUIRES_XR_SDK
 		if (PlayerSettings.virtualRealitySupported)
 			return;
 		
@@ -162,18 +162,27 @@ class OVREngineConfigurationUpdater
 				return;
 			}
 		}
+#endif
 	}
 
 	private static void EnforceBundleId()
 	{
-		if (!PlayerSettings.virtualRealitySupported)
-			return;
+		bool shouldEnforceBundleId = false;
+#if USING_XR_SDK
+		shouldEnforceBundleId = true;
+#elif !REQUIRES_XR_SDK
+		if (PlayerSettings.virtualRealitySupported)
+			shouldEnforceBundleId = true;
+#endif
 
-		if (PlayerSettings.applicationIdentifier == "" || PlayerSettings.applicationIdentifier == "com.Company.ProductName")
+		if (shouldEnforceBundleId)
 		{
-			string defaultBundleId = "com.oculus.UnitySample";
-			Debug.LogWarning("\"" + PlayerSettings.applicationIdentifier + "\" is not a valid bundle identifier. Defaulting to \"" + defaultBundleId + "\".");
-			PlayerSettings.applicationIdentifier = defaultBundleId;
+			if (PlayerSettings.applicationIdentifier == "" || PlayerSettings.applicationIdentifier == "com.Company.ProductName")
+			{
+				string defaultBundleId = "com.oculus.UnitySample";
+				Debug.LogWarning("\"" + PlayerSettings.applicationIdentifier + "\" is not a valid bundle identifier. Defaulting to \"" + defaultBundleId + "\".");
+				PlayerSettings.applicationIdentifier = defaultBundleId;
+			}
 		}
 	}
 
@@ -187,14 +196,6 @@ class OVREngineConfigurationUpdater
 	{
 		try
 		{
-			BindAxis(new Axis() { name = "Oculus_GearVR_LThumbstickX",  axis =  0,               });
-			BindAxis(new Axis() { name = "Oculus_GearVR_LThumbstickY",  axis =  1, invert = true });
-			BindAxis(new Axis() { name = "Oculus_GearVR_RThumbstickX",  axis =  2,               });
-			BindAxis(new Axis() { name = "Oculus_GearVR_RThumbstickY",  axis =  3, invert = true });
-			BindAxis(new Axis() { name = "Oculus_GearVR_DpadX",         axis =  4,               });
-			BindAxis(new Axis() { name = "Oculus_GearVR_DpadY",         axis =  5, invert = true });
-			BindAxis(new Axis() { name = "Oculus_GearVR_LIndexTrigger", axis = 12,               });
-			BindAxis(new Axis() { name = "Oculus_GearVR_RIndexTrigger", axis = 11,               });
 			BindAxis(new Axis() { name = "Oculus_CrossPlatform_Button2", positiveButton = "joystick button 0", gravity = 1000f, sensitivity = 1000f, type = 0 });
 			BindAxis(new Axis() { name = "Oculus_CrossPlatform_Button4", positiveButton = "joystick button 2", gravity = 1000f, sensitivity = 1000f, type = 0 });
 			BindAxis(new Axis() { name = "Oculus_CrossPlatform_PrimaryThumbstick", positiveButton = "joystick button 8", gravity = 0f, dead = 0f, sensitivity = 0.1f, type = 0 });
@@ -210,36 +211,8 @@ class OVREngineConfigurationUpdater
 		}
 		catch
 		{
-			Debug.LogError("Failed to apply Oculus GearVR input manager bindings.");
+			Debug.LogError("Failed to apply Oculus input manager bindings.");
 		}
-	}
-
-	private static void EnforceOSIG()
-	{
-		// Don't bug the user in play mode.
-		if (Application.isPlaying)
-			return;
-		
-		// Don't warn if the project may be set up for submission or global signing.
-		if (File.Exists(androidManifestPath))
-			return;
-
-		bool foundPossibleOsig = false;
-		if (Directory.Exists(androidAssetsPath))
-		{
-			var files = Directory.GetFiles(androidAssetsPath);
-			for (int i = 0; i < files.Length; ++i)
-			{
-				if (!files[i].Contains(".txt"))
-				{
-					foundPossibleOsig = true;
-					break;
-				}
-			}
-		}
-
-		if (!foundPossibleOsig)
-			Debug.LogWarning("Missing Gear VR OSIG at " + androidAssetsPath + ". Please see https://dashboard.oculus.com/tools/osig-generator");
 	}
 
 	private class Axis

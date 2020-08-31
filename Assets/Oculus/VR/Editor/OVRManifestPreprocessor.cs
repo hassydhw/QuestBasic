@@ -202,7 +202,7 @@ public class OVRManifestPreprocessor
                 OVRDeviceSelector.isTargetDeviceQuest,
                 true,
                 "version", "1",
-                "required", OVRDeviceSelector.isTargetDeviceGearVrOrGo ? "false" : "true");
+                "required", "true");
 
             // If Quest is the target device, add the handtracking manifest tags if needed
             // Mapping of project setting to manifest setting:
@@ -237,6 +237,16 @@ public class OVRManifestPreprocessor
                 OVRDeviceSelector.isTargetDeviceQuest,
                 modifyIfFound,
                 "value", projectConfig.focusAware ? "true" : "false");
+
+            // Add system keyboard tag
+            AddOrRemoveTag(doc,
+                androidNamepsaceURI,
+                "/manifest",
+                "uses-feature",
+                "oculus.software.overlay_keyboard",
+                projectConfig.focusAware && projectConfig.requiresSystemKeyboard,
+                modifyIfFound,
+                "required", "false");
 
             // make sure the VR Mode tag is set in the manifest
             AddOrRemoveTag(doc,

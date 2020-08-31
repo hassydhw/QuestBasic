@@ -25,9 +25,7 @@ public class OVRProfiler : EditorWindow
 {
 	enum TargetPlatform
 	{
-		OculusGo,
-		GearVR,
-		Quest,
+		OculusQuest,
 		OculusRift
 	};
 
@@ -41,7 +39,7 @@ public class OVRProfiler : EditorWindow
 		// Get existing open window or if none, make a new one:
 		EditorWindow.GetWindow(typeof(OVRProfiler));
 #if UNITY_ANDROID
-		mTargetPlatform = TargetPlatform.OculusGo;
+		mTargetPlatform = TargetPlatform.OculusQuest;
 #else
 		mTargetPlatform = TargetPlatform.OculusRift;
 #endif
@@ -52,7 +50,7 @@ public class OVRProfiler : EditorWindow
 		GUILayout.Label("OVR Profiler", EditorStyles.boldLabel);
 		string[] options = new string[]
 		{
-			"Oculus Go", "Gear VR", "Oculus Quest", "Oculus Rift",
+			"Oculus Quest", "Oculus Rift",
 		};
 		mTargetPlatform = (TargetPlatform)EditorGUILayout.Popup("Target Oculus Platform", (int)mTargetPlatform, options);
 
