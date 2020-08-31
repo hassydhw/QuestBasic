@@ -4,26 +4,20 @@ using UnityEngine;
 
 public class MyLaser : MonoBehaviour
 {
-
     // 右手
-    [SerializeField]
-    private Transform _RightHandAnchor;
+    [SerializeField] private Transform _RightHandAnchor;
 
     // 左手
-    [SerializeField]
-    private Transform _LeftHandAnchor;
+    [SerializeField] private Transform _LeftHandAnchor;
 
     // 目の中心
-    [SerializeField]
-    private Transform _CenterEyeAnchor;
+    [SerializeField] private Transform _CenterEyeAnchor;
 
     // 距離
-    [SerializeField]
-    private float _MaxDistance = 100.0f;
+    [SerializeField] private float _MaxDistance = 100.0f;
 
     // LineRenderer
-    [SerializeField]
-    private LineRenderer _LaserPointerRenderer;
+    [SerializeField] private LineRenderer _LaserPointerRenderer;
 
     // コントローラー
     private Transform Pointer
@@ -32,14 +26,15 @@ public class MyLaser : MonoBehaviour
         {
             // 現在アクティブなコントローラーを取得
             var controller = OVRInput.GetActiveController();
-            if (controller == OVRInput.Controller.RTrackedRemote)
+            if (controller == OVRInput.Controller.RTouch)
             {
                 return _RightHandAnchor;
             }
-            else if (controller == OVRInput.Controller.LTrackedRemote)
+            else if (controller == OVRInput.Controller.LTouch)
             {
                 return _LeftHandAnchor;
             }
+
             // どちらも取れなければ目の間からビームが出る
             return _CenterEyeAnchor;
         }
