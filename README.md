@@ -9,7 +9,7 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 リクエストが多いようなら、より詳細な実装のしかたはそのうちQiitaなどに書くかもしれません。
 
 ## 使用機器
-* Oculus Quest（動作検証に使ったQuestのファームのバージョン　20.0.0.xxxxxxxxxxxxx）
+* Oculus Quest/Quest2（動作検証に使ったQuestのファームのバージョン　21.0.0.xxxxxxxxxxxxx）
 
 ## Unityバージョン
 * 2019.2.21.f1  
@@ -17,7 +17,7 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 2019.3系以降はXR設定の手順がことなるので動作確認とっていません
 
 ## 使用ライブラリ
-* Oculus Integration version 19.1  
+* Oculus Integration version 20.1  
 <https://developer.oculus.com/downloads/package/unity-integration/>
 
   プロジェクト内に同梱しています
