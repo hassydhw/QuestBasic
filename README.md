@@ -12,12 +12,11 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 * Oculus Quest/Quest2（動作検証に使ったQuestのファームのバージョン　21.0.0.xxxxxxxxxxxxx）
 
 ## Unityバージョン
-* 2019.2.21.f1  
-2019.2系なら問題なく動くと思います  
-2019.3系以降はXR設定の手順がことなるので動作確認とっていません
+* 2019.4.11.f1  
+2019.4系なら問題なく動くと思います  
 
 ## 使用ライブラリ
-* Oculus Integration version 20.1  
+* Oculus Integration version 25.0  
 <https://developer.oculus.com/downloads/package/unity-integration/>
 
   プロジェクト内に同梱しています
@@ -33,10 +32,8 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 * _07_xx		HMD側のセンサーの取得  
 
 ## 注意事項
-* Githubにおいてあるものは、テクスチャ素材をLFSで管理していたので、ダウンロードするバージョンによってはzipでダウンロードするとテクスチャが含まれない可能性があります（Githubの仕様らしいです）
-* その場合、Github Desktopをつかってプロジェクトを入手するか、以下のコマンドでcloneするとテクスチャ素材も入手できます。  
+* Githubからクローンする場合  
 git clone https://github.com/hassydhw/OculusGoBasics.git
-* ちなみにcloneでエラーが出る場合は git-lfsコマンドがちゃんとインストールされているか確認しましょう。
 
 ## ビルド時にエラーが出る場合
 Oculusフォルダを削除し（Oculus Integrationがはいっているフォルダ）、アセットストアから、Oculus Ingegrationをダウンロードして取り込みなおしてみてください。
