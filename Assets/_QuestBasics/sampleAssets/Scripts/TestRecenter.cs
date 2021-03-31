@@ -24,10 +24,10 @@ public class TestRecenter : MonoBehaviour
             OVRManager.display.RecenterPose();
         }
 
-        if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger))
-        {
-            Debug.Log("left index " + Time.realtimeSinceStartup);
-            InputTracking.Recenter();// これでもOK、ただしusing必要
-        }
+        // if (OVRInput.GetDown(OVRInput.RawButton.LIndexTrigger))
+        // {
+        //     Debug.Log("left index " + Time.realtimeSinceStartup);
+        //     InputTracking.Recenter();// これはobsoleteされたっぽい
+        // }
     }
 }

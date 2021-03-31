@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using QuestBasics;
 
 public class versionTextScript : MonoBehaviour
 {
@@ -9,11 +8,6 @@ public class versionTextScript : MonoBehaviour
     void Start()
     {
         var myTextMesh = GetComponent<TextMesh>();
-        myTextMesh.text = myTextMesh.text + "\n" + ConfigSettings.versionNumber;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
+        myTextMesh.text = myTextMesh.text + "\n" + QB_ConfigSettings.versionNumber;
     }
 }
