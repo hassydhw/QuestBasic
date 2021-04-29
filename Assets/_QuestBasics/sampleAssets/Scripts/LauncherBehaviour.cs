@@ -8,7 +8,7 @@ public class LauncherBehaviour : MonoBehaviour
 {
     [SerializeField] private Scene [] _scenes;
     [SerializeField] private Dropdown dropdown;
-    private int sceneIndex = 1;
+    private int sceneIndex = 0;
     
     // Start is called before the first frame update
     void Start()
@@ -32,7 +32,7 @@ public class LauncherBehaviour : MonoBehaviour
 
     public void OnDropdownValueChanged(int newValue)
     {
-        sceneIndex = newValue + 1;
+        sceneIndex = newValue;
     }
     
     

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 23931135217892220}
   - component: {fileID: 102832272133511800}
   - component: {fileID: 390415323993485089}
+  - component: {fileID: 1320093275902795968}
   m_Layer: 0
   m_Name: SceneTheme
   m_TagString: Untagged
@@ -104,5 +105,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ca0ba7c2eb101545a16bbefff1cd085, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1320093275902795968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1108522400370732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9aae45c7f2b2c04d88aaa7829427d09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

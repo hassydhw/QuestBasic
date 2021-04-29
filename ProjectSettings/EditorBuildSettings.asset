@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_00_0_Launcher.unity
+    path: Assets/_QuestBasics/_00_0_Launcher.unity
     guid: 17dc5d6561c287544a93bf069e543b6a
   - enabled: 1
     path: Assets/_QuestBasics/_01_1_TofuWithQuestController.unity
