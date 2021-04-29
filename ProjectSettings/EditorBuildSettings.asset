@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/_QuestBasics/_01_2_TofuWithHand.unity
     guid: 0a407865dff27b34b872d467fbef7d4b
   - enabled: 1
-    path: Assets/_QuestBasics/_01_3_TofuWithAnimatedController.unity
+    path: Assets/_QuestBasics/_01_3_TofuWithRiftTouchController.unity
     guid: c9c0b28fc6346fe4cad260cd34912ccd
   - enabled: 1
     path: Assets/_QuestBasics/_01_4_TofuWithBar.unity

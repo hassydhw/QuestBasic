@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HMDAcceleration : MonoBehaviour
+public class TestHMD : MonoBehaviour
 {
     TextMesh logMesh;
     OVRDisplay _ovrDisplay;
