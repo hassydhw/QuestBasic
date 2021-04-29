@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.UI;
 
 public class LauncherBehaviour : MonoBehaviour
 {
     [SerializeField] private Scene [] _scenes;
-    
+    [SerializeField] private Dropdown dropdown;
+    private int sceneIndex = 1;
     
     // Start is called before the first frame update
     void Start()
@@ -17,12 +18,10 @@ public class LauncherBehaviour : MonoBehaviour
             string pathToScene = SceneUtility.GetScenePathByBuildIndex(i+1);
             string sceneName = System.IO.Path.GetFileNameWithoutExtension(pathToScene);
             Debug.Log(sceneName);            
+            dropdown.options.Add(new Dropdown.OptionData { text = sceneName });
         }
+        dropdown.RefreshShownValue();
         
-        // foreach (var eachScene in _scenes)
-        // {
-        //     Debug.Log(eachScene.buildIndex);
-        // }
     }
 
     // Update is called once per frame
@@ -31,9 +30,15 @@ public class LauncherBehaviour : MonoBehaviour
         
     }
 
+    public void OnDropdownValueChanged(int newValue)
+    {
+        sceneIndex = newValue + 1;
+    }
+    
+    
     public void OnSceneChangeButtonPressed()
     {
-        SceneManager.LoadSceneAsync(_scenes[10].handle);
+        SceneManager.LoadSceneAsync(_scenes[sceneIndex].handle);
     }
     
     
