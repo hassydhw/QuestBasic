@@ -16,6 +16,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 
+
 /// <summary>
 /// Add OVROverlay script to an object with an optional mesh primitive
 /// rendered as a TimeWarp overlay instead by drawing it into the eye buffer.
@@ -807,7 +808,7 @@ public class OVROverlay : MonoBehaviour
 				UnityEngine.Object.DestroyImmediate(previewObject);
 				previewObject = null;
 			}
-		#endif
+#endif
 	}
 
 

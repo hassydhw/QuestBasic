@@ -321,6 +321,7 @@ public class OVROverlayEditor : Editor
 		}
 
 
+
 		EditorGUILayout.Separator();
 		EditorGUILayout.LabelField("Color Scale", EditorStyles.boldLabel);
 		EditorGUILayout.Space();

@@ -126,10 +126,12 @@ namespace Oculus.Platform
       IAP_LaunchCheckoutFlow                              = 0x3F9B0D0D,
       LanguagePack_GetCurrent                             = 0x1F90F0D5,
       LanguagePack_SetCurrent                             = 0x5B4FBBE0,
+      Leaderboard_Get                                     = 0x6AD44EF8,
       Leaderboard_GetEntries                              = 0x5DB3474C,
       Leaderboard_GetEntriesAfterRank                     = 0x18378BEF,
       Leaderboard_GetEntriesByIds                         = 0x39607BFC,
       Leaderboard_GetNextEntries                          = 0x4E207CD9,
+      Leaderboard_GetNextLeaderboardArrayPage             = 0x35F6769B,
       Leaderboard_GetPreviousEntries                      = 0x4901DAC0,
       Leaderboard_WriteEntry                              = 0x117FC8FE,
       Leaderboard_WriteEntryWithSupplementaryMetric       = 0x72C692FA,
@@ -350,6 +352,7 @@ namespace Oculus.Platform
     public virtual LaunchUnblockFlowResult GetLaunchUnblockFlowResult() { return null; }
     public virtual bool GetLeaderboardDidUpdate() { return false; }
     public virtual LeaderboardEntryList GetLeaderboardEntryList() { return null; }
+    public virtual LeaderboardList GetLeaderboardList() { return null; }
     public virtual LinkedAccountList GetLinkedAccountList() { return null; }
     public virtual LivestreamingApplicationStatus GetLivestreamingApplicationStatus() { return null; }
     public virtual LivestreamingStartResult GetLivestreamingStartResult() { return null; }
@@ -548,6 +551,11 @@ namespace Oculus.Platform
 
         case Message.MessageType.User_LaunchFriendRequestFlow:
           message = new MessageWithLaunchFriendRequestFlowResult(messageHandle);
+          break;
+
+        case Message.MessageType.Leaderboard_Get:
+        case Message.MessageType.Leaderboard_GetNextLeaderboardArrayPage:
+          message = new MessageWithLeaderboardList(messageHandle);
           break;
 
         case Message.MessageType.Leaderboard_GetEntries:
@@ -1148,6 +1156,18 @@ namespace Oculus.Platform
       var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
       var obj = CAPI.ovr_Message_GetLaunchUnblockFlowResult(msg);
       return new LaunchUnblockFlowResult(obj);
+    }
+
+  }
+  public class MessageWithLeaderboardList : Message<LeaderboardList>
+  {
+    public MessageWithLeaderboardList(IntPtr c_message) : base(c_message) { }
+    public override LeaderboardList GetLeaderboardList() { return Data; }
+    protected override LeaderboardList GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetLeaderboardArray(msg);
+      return new LeaderboardList(obj);
     }
 
   }

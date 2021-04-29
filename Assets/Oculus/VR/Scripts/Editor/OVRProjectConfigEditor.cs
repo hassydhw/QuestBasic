@@ -46,7 +46,6 @@ public class OVRProjectConfigEditor : Editor
 	public static void DrawProjectConfigInspector(OVRProjectConfig projectConfig)
 	{
 		bool hasModified = false;
-		EditorGUI.BeginDisabledGroup(!projectConfig.targetDeviceTypes.Contains(OVRProjectConfig.DeviceType.Quest));
 		EditorGUILayout.LabelField("Quest Features", EditorStyles.boldLabel);
 
 		// Show overlay support option
@@ -78,7 +77,6 @@ public class OVRProjectConfigEditor : Editor
 		EditorGUI.EndDisabledGroup();
 		EditorGUILayout.Space();
 
-		EditorGUI.BeginDisabledGroup(false);
 		EditorGUILayout.LabelField("Android Build Settings", EditorStyles.boldLabel);
 
 		// Show overlay support option

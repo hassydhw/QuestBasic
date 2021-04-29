@@ -450,7 +450,7 @@ public class OVRBundleManager
 		}
 		else
 		{
-			if (output.Contains("does not exist"))
+			if (output.Contains("does not exist") || output.Contains("No such file or directory"))
 			{
 				// Fresh install of asset bundles, transfer all asset bundles
 				OVRBundleTool.PrintLog("Manifest file not found. Transfering all bundles . . . ");

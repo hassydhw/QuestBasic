@@ -1188,9 +1188,9 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	public bool useIPDInPositionTracking = true;
 
 	/// <summary>
-	/// If true, each scene load will cause the head pose to reset.
+	/// If true, each scene load will cause the head pose to reset. This function only works on Rift.
 	/// </summary>
-	[Tooltip("If true, each scene load will cause the head pose to reset.")]
+	[Tooltip("If true, each scene load will cause the head pose to reset. This function only works on Rift.")]
 	public bool resetTrackerOnLoad = false;
 
 	/// <summary>
@@ -1490,7 +1490,9 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 			{
 				perfTcpServer.enabled = true;
 			}
+#if !UNITY_EDITOR
 			OVRPlugin.SetDeveloperMode(OVRPlugin.Bool.True);
+#endif
 		}
 
 		// Refresh the client color space

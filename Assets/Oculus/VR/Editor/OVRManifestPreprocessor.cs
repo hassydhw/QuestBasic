@@ -89,7 +89,7 @@ public class OVRManifestPreprocessor
         AssetDatabase.Refresh();
     }
 
-    private static void AddOrRemoveTag(XmlDocument doc, string @namespace, string path, string elementName, string name, bool required, bool modifyIfFound, params string[] attrs) // name, value pairs	
+    private static void AddOrRemoveTag(XmlDocument doc, string @namespace, string path, string elementName, string name, bool required, bool modifyIfFound, params string[] attrs) // name, value pairs
     {
         var nodes = doc.SelectNodes(path + "/" + elementName);
         XmlElement element = null;
@@ -169,14 +169,6 @@ public class OVRManifestPreprocessor
                 return;
             }
 
-            // remove launcher and leanback launcher
-            AddOrRemoveTag(doc,
-                androidNamepsaceURI,
-                "/manifest/application/activity/intent-filter",
-                "category",
-                "android.intent.category.LAUNCHER",
-                required: false,
-                modifyIfFound: true); // always remove launcher
             AddOrRemoveTag(doc,
                 androidNamepsaceURI,
                 "/manifest/application/activity/intent-filter",
@@ -184,14 +176,6 @@ public class OVRManifestPreprocessor
                 "android.intent.category.LEANBACK_LAUNCHER",
                 required: false,
                 modifyIfFound: true); // always remove leanback launcher
-            // add info category
-            AddOrRemoveTag(doc,
-                androidNamepsaceURI,
-                "/manifest/application/activity/intent-filter",
-                "category",
-                "android.intent.category.INFO",
-                required: true,
-                modifyIfFound: true); // always add info launcher
 
             // First add or remove headtracking flag if targeting Quest
             AddOrRemoveTag(doc,
@@ -289,17 +273,17 @@ public class OVRManifestPreprocessor
                 modifyIfFound,
                 "value", "vr_only");
 
-			// Add VR intent filter tag in the manifest
-			AddOrRemoveTag(doc,
-				androidNamepsaceURI,
-				"/manifest/application/activity/intent-filter",
-				"category",
-				"com.oculus.intent.category.VR",
-				required: true,
-				modifyIfFound: true);
+            // Add VR intent filter tag in the manifest
+            AddOrRemoveTag(doc,
+                androidNamepsaceURI,
+                "/manifest/application/activity/intent-filter",
+                "category",
+                "com.oculus.intent.category.VR",
+                required: true,
+                modifyIfFound: true);
 
-			// make sure android label and icon are set in the manifest
-			AddOrRemoveTag(doc,
+            // make sure android label and icon are set in the manifest
+            AddOrRemoveTag(doc,
                 androidNamepsaceURI,
                 "/manifest",
                 "application",
@@ -308,7 +292,7 @@ public class OVRManifestPreprocessor
                 modifyIfFound,
                 "label", "@string/app_name",
                 "icon", "@mipmap/app_icon",
-                // Disable allowBackup in manifest and add Android NSC XML file				
+                // Disable allowBackup in manifest and add Android NSC XML file
                 "allowBackup", projectConfig.disableBackups ? "false" : "true",
                 "networkSecurityConfig", projectConfig.enableNSCConfig && enableSecurity ? "@xml/network_sec_config" : null
                 );

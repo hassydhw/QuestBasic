@@ -541,6 +541,18 @@ namespace Oculus.Platform
     }
   }
 
+  public static partial class Users
+  {
+    public static string GetLoggedInUserLocale()
+    {
+      if (Core.IsInitialized())
+      {
+        return CAPI.ovr_GetLoggedInUserLocale();
+      }
+      return "";
+    }
+  }
+
   public static partial class AbuseReport
   {
   }
@@ -891,7 +903,7 @@ namespace Oculus.Platform
 
   public static partial class Challenges
   {
-    /// Creates a new user challenge
+    /// DEPRECATED. Use server-to-server API call instead.
     ///
     public static Request<Models.Challenge> Create(string leaderboardName, ChallengeOptions challengeOptions)
     {
@@ -915,7 +927,7 @@ namespace Oculus.Platform
       return null;
     }
 
-    /// If the current user has permission, deletes a challenge
+    /// DEPRECATED. Use server-to-server API call instead.
     ///
     public static Request Delete(UInt64 challengeID)
     {
@@ -1024,7 +1036,7 @@ namespace Oculus.Platform
       return null;
     }
 
-    /// If the current user has permission, updates a challenge information
+    /// DEPRECATED. Use server-to-server API call instead.
     ///
     public static Request<Models.Challenge> UpdateInfo(UInt64 challengeID, ChallengeOptions challengeOptions)
     {
@@ -1346,6 +1358,19 @@ namespace Oculus.Platform
 
   public static partial class Leaderboards
   {
+    /// Gets the information for a single leaderboard
+    /// \param leaderboardName The name of the leaderboard to return.
+    ///
+    public static Request<Models.LeaderboardList> Get(string leaderboardName)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.LeaderboardList>(CAPI.ovr_Leaderboard_Get(leaderboardName));
+      }
+
+      return null;
+    }
+
     /// Requests a block of leaderboard entries.
     /// \param leaderboardName The name of the leaderboard whose entries to return.
     /// \param limit Defines the maximum number of entries to return.
@@ -2871,6 +2896,29 @@ namespace Oculus.Platform
           CAPI.ovr_HTTP_GetWithMessageType(
             list.NextUrl,
             (int)Message.MessageType.IAP_GetNextPurchaseArrayPage
+          )
+        );
+      }
+
+      return null;
+    }
+
+  }
+
+  public static partial class Leaderboards {
+    public static Request<Models.LeaderboardList> GetNextLeaderboardListPage(Models.LeaderboardList list) {
+      if (!list.HasNextPage)
+      {
+        Debug.LogWarning("Oculus.Platform.GetNextLeaderboardListPage: List has no next page");
+        return null;
+      }
+
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.LeaderboardList>(
+          CAPI.ovr_HTTP_GetWithMessageType(
+            list.NextUrl,
+            (int)Message.MessageType.Leaderboard_GetNextLeaderboardArrayPage
           )
         );
       }

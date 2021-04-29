@@ -990,6 +990,16 @@ namespace Oculus.Platform
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_LanguagePack_SetCurrent")]
     private static extern ulong ovr_LanguagePack_SetCurrent_Native(IntPtr tag);
 
+    public static ulong ovr_Leaderboard_Get(string leaderboardName) {
+      IntPtr leaderboardName_native = StringToNative(leaderboardName);
+      var result = (ovr_Leaderboard_Get_Native(leaderboardName_native));
+      Marshal.FreeCoTaskMem(leaderboardName_native);
+      return result;
+    }
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_Leaderboard_Get")]
+    private static extern ulong ovr_Leaderboard_Get_Native(IntPtr leaderboardName);
+
     public static ulong ovr_Leaderboard_GetEntries(string leaderboardName, int limit, LeaderboardFilterType filter, LeaderboardStartAt startAt) {
       IntPtr leaderboardName_native = StringToNative(leaderboardName);
       var result = (ovr_Leaderboard_GetEntries_Native(leaderboardName_native, limit, filter, startAt));
@@ -2382,6 +2392,29 @@ namespace Oculus.Platform
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_Leaderboard_GetApiName")]
     private static extern IntPtr ovr_Leaderboard_GetApiName_Native(IntPtr obj);
 
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
+    public static extern IntPtr ovr_Leaderboard_GetDestination(IntPtr obj);
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
+    public static extern UInt64 ovr_Leaderboard_GetID(IntPtr obj);
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
+    public static extern IntPtr ovr_LeaderboardArray_GetElement(IntPtr obj, UIntPtr index);
+
+    public static string ovr_LeaderboardArray_GetNextUrl(IntPtr obj) {
+      var result = StringFromNative(ovr_LeaderboardArray_GetNextUrl_Native(obj));
+      return result;
+    }
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl, EntryPoint="ovr_LeaderboardArray_GetNextUrl")]
+    private static extern IntPtr ovr_LeaderboardArray_GetNextUrl_Native(IntPtr obj);
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
+    public static extern UIntPtr ovr_LeaderboardArray_GetSize(IntPtr obj);
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
+    public static extern bool ovr_LeaderboardArray_HasNextPage(IntPtr obj);
+
     public static string ovr_LeaderboardEntry_GetDisplayScore(IntPtr obj) {
       var result = StringFromNative(ovr_LeaderboardEntry_GetDisplayScore_Native(obj));
       return result;
@@ -2781,6 +2814,9 @@ namespace Oculus.Platform
 
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
     public static extern IntPtr ovr_Message_GetLaunchUnblockFlowResult(IntPtr obj);
+
+    [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
+    public static extern IntPtr ovr_Message_GetLeaderboardArray(IntPtr obj);
 
     [DllImport(DLL_NAME, CallingConvention=CallingConvention.Cdecl)]
     public static extern IntPtr ovr_Message_GetLeaderboardEntryArray(IntPtr obj);
