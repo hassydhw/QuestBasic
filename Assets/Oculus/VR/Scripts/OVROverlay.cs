@@ -16,7 +16,6 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 
-
 /// <summary>
 /// Add OVROverlay script to an object with an optional mesh primitive
 /// rendered as a TimeWarp overlay instead by drawing it into the eye buffer.
@@ -58,6 +57,8 @@ public class OVROverlay : MonoBehaviour
 		Cubemap = OVRPlugin.OverlayShape.Cubemap,
 		OffcenterCubemap = OVRPlugin.OverlayShape.OffcenterCubemap,
 		Equirect = OVRPlugin.OverlayShape.Equirect,
+		ReconstructionPassthrough = OVRPlugin.OverlayShape.ReconstructionPassthrough,
+		SurfaceProjectedPassthrough = OVRPlugin.OverlayShape.SurfaceProjectedPassthrough,
 		Fisheye = OVRPlugin.OverlayShape.Fisheye,
 	}
 
@@ -114,6 +115,7 @@ public class OVROverlay : MonoBehaviour
 	//Property that can hide overlays when required. Should be false when present, true when hidden.
 	public bool hidden = false;
 
+
 	/// <summary>
 	/// If true, the layer will be created as an external surface. externalSurfaceObject contains the Surface object. It's effective only on Android.
 	/// </summary>
@@ -137,12 +139,13 @@ public class OVROverlay : MonoBehaviour
 	/// </summary>
 	[Tooltip("The compositionDepth defines the order of the OVROverlays in composition. The overlay/underlay with smaller compositionDepth would be composited in the front of the overlay/underlay with larger compositionDepth.")]
 	public int compositionDepth = 0;
+	private int layerCompositionDepth = 0;
 
 	/// <summary>
 	/// The noDepthBufferTesting will stop layer's depth buffer compositing even if the engine has "Depth buffer sharing" enabled on Rift.
 	/// </summary>
-	[Tooltip("The noDepthBufferTesting will stop layer's depth buffer compositing even if the engine has \"Shared Depth Buffer\" enabled")]
-	public bool noDepthBufferTesting = false;
+	[Tooltip("The noDepthBufferTesting will stop layer's depth buffer compositing even if the engine has \"Shared Depth Buffer\" enabled. The layer's ordering will be used instead which is determined by it's composition depth and overlay/underlay type.")]
+	public bool noDepthBufferTesting = true;
 
 	//Format corresponding to the source texture for this layer. sRGB by default, but can be modified if necessary
 	public OVRPlugin.EyeTextureFormat layerTextureFormat = OVRPlugin.EyeTextureFormat.R8G8B8A8_sRGB;
@@ -163,6 +166,7 @@ public class OVROverlay : MonoBehaviour
 
 	[Tooltip("When checked, the texture is treated as if the alpha was already premultiplied")]
 	public bool isAlphaPremultiplied = false;
+
 
 	/// <summary>
 	/// Preview the overlay in the editor using a mesh renderer.
@@ -221,7 +225,9 @@ public class OVROverlay : MonoBehaviour
 	internal const int maxInstances = 15;
 	public static OVROverlay[] instances = new OVROverlay[maxInstances];
 
-#endregion
+	public int layerId { get; private set; } = 0; // The layer's internal handle in the compositor.
+
+	#endregion
 
 	private static Material tex2DMaterial;
 	private static Material cubeMaterial;
@@ -248,8 +254,6 @@ public class OVROverlay : MonoBehaviour
 	private int stageCount = -1;
 
 	private int layerIndex = -1; // Controls the composition order based on wake-up time.
-
-	private int layerId = 0; // The layer's internal handle in the compositor.
 	private GCHandle layerIdHandle;
 	private IntPtr layerIdPtr = IntPtr.Zero;
 
@@ -262,7 +266,7 @@ public class OVROverlay : MonoBehaviour
 
 	private static bool NeedsTexturesForShape(OverlayShape shape)
 	{
-		return true;
+		return !IsPassthroughShape(shape);
 	}
 
 	private bool CreateLayer(int mipLevels, int sampleCount, OVRPlugin.EyeTextureFormat etFormat, int flags, OVRPlugin.Sizei size, OVRPlugin.OverlayShape shape)
@@ -294,7 +298,8 @@ public class OVROverlay : MonoBehaviour
 			layerDesc.Layout != layout ||
 			layerDesc.LayerFlags != flags ||
 			!layerDesc.TextureSize.Equals(size) ||
-			layerDesc.Shape != shape);
+			layerDesc.Shape != shape ||
+			layerCompositionDepth != compositionDepth);
 
 		if (!needsSetup)
 			return false;
@@ -306,6 +311,7 @@ public class OVROverlay : MonoBehaviour
 		if (layerId > 0)
 		{
 			layerDesc = desc;
+			layerCompositionDepth = compositionDepth;
 			if (isExternalSurface)
 			{
 				stageCount = 1;
@@ -600,6 +606,7 @@ public class OVROverlay : MonoBehaviour
 			newDesc.LayerFlags |= (int)OVRPlugin.LayerFlags.AndroidSurfaceSwapChain;
 		}
 
+
 		return newDesc;
 	}
 
@@ -720,6 +727,7 @@ public class OVROverlay : MonoBehaviour
 
 					blitMat.SetInt("_linearToSrgb", linearToSRGB ? 1 : 0);
 					blitMat.SetInt("_premultiply", premultiplyAlpha ? 1 : 0);
+					blitMat.SetInt("_flip", OVRPlugin.nativeXrApi == OVRPlugin.XrApi.OpenXR ? 1 : 0);
 				}
 
 				if (currentOverlayShape != OverlayShape.Cubemap && currentOverlayShape != OverlayShape.OffcenterCubemap)
@@ -811,6 +819,11 @@ public class OVROverlay : MonoBehaviour
 #endif
 	}
 
+	public static bool IsPassthroughShape(OverlayShape shape)
+	{
+		return shape == OverlayShape.ReconstructionPassthrough
+			|| shape == OverlayShape.SurfaceProjectedPassthrough;
+	}
 
 	#region Unity Messages
 
@@ -985,6 +998,12 @@ public class OVROverlay : MonoBehaviour
 			}
 		}
 
+		if (OVRPlugin.nativeXrApi == OVRPlugin.XrApi.OpenXR && currentOverlayShape == OverlayShape.Fisheye)
+		{
+			Debug.LogWarning("Fisheye overlay shape is not support on OpenXR");
+			return false;
+		}
+
 		return true;
 	}
 
@@ -1126,7 +1145,6 @@ public class OVROverlay : MonoBehaviour
 					return;
 			}
 		}
-
 
 		bool isOverlayVisible = SubmitLayer(overlay, headLocked, noDepthBufferTesting, pose, scale, frameIndex);
 

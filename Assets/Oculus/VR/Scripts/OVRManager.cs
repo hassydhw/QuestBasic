@@ -241,6 +241,8 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	/// </summary>
 	public static event Action<float, float> DisplayRefreshRateChanged;
 
+/// SceneApi definitions
+
 	/// <summary>
 	/// Occurs when Health & Safety Warning is dismissed.
 	/// </summary>
@@ -385,12 +387,6 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 			_monoscopic = value;
 		}
 	}
-
-	/// <summary>
-	/// If true, dynamic resolution will be enabled
-	/// </summary>
-	[Tooltip("If true, dynamic resolution will be enabled On PC")]
-	public bool enableAdaptiveResolution = false;
 
 	[SerializeField, HideInInspector]
 	private OVRManager.ColorSpace _colorGamut = OVRManager.ColorSpace.Rift_CV1;
@@ -683,6 +679,7 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	public enum VirtualGreenScreenType
 	{
 		Off,
+		[System.Obsolete("Deprecated. This enum value will not be supported in OpenXR", false)]
 		OuterBoundary,
 		PlayArea
 	}
@@ -743,7 +740,7 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	/// Allows overriding the internal mrc camera creation
 	/// </summary>
 	public InstantiateMrcCameraDelegate instantiateMixedRealityCameraGameObject = null;
-	
+
 	// OVRMixedRealityCaptureConfiguration Interface implementation
 	bool OVRMixedRealityCaptureConfiguration.enableMixedReality { get { return enableMixedReality; } set { enableMixedReality = value; } }
 	LayerMask OVRMixedRealityCaptureConfiguration.extraHiddenLayers { get { return extraHiddenLayers; } set { extraHiddenLayers = value; } }
@@ -776,6 +773,12 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 
 #endif
 
+	/// <summary>
+	/// Specify if Insight Passthrough should be enabled.
+	/// Passthrough overlays/underlays can only be used if passthrough is enabled.
+	/// </summary>
+	[HideInInspector, Tooltip("Specify if Insight Passthrough should be enabled. Passthrough overlays/underlays can only be used if passthrough is enabled.")]
+	public bool isInsightPassthroughEnabled = false;
 
 	/// <summary>
 	/// The native XR API being used
@@ -836,10 +839,11 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	public static XRDevice loadedXRDevice;
 
 	/// <summary>
-	/// Gets the current battery level.
+	/// Gets the current battery level (Deprecated).
 	/// </summary>
 	/// <returns><c>battery level in the range [0.0,1.0]</c>
 	/// <param name="batteryLevel">Battery level.</param>
+	[System.Obsolete("Deprecated. Please use SystemInfo.batteryLevel", false)]
 	public static float batteryLevel
 	{
 		get {
@@ -851,10 +855,11 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	}
 
 	/// <summary>
-	/// Gets the current battery temperature.
+	/// Gets the current battery temperature (Deprecated).
 	/// </summary>
 	/// <returns><c>battery temperature in Celsius</c>
 	/// <param name="batteryTemperature">Battery temperature.</param>
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static float batteryTemperature
 	{
 		get {
@@ -866,10 +871,11 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	}
 
 	/// <summary>
-	/// Gets the current battery status.
+	/// Gets the current battery status (Deprecated).
 	/// </summary>
 	/// <returns><c>battery status</c>
 	/// <param name="batteryStatus">Battery status.</param>
+	[System.Obsolete("Deprecated. Please use SystemInfo.batteryStatus", false)]
 	public static int batteryStatus
 	{
 		get {
@@ -881,9 +887,10 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	}
 
 	/// <summary>
-	/// Gets the current volume level.
+	/// Gets the current volume level (Deprecated).
 	/// </summary>
 	/// <returns><c>volume level in the range [0,1].</c>
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static float volumeLevel
 	{
 		get {
@@ -1201,7 +1208,7 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	/// the player to potentially invalid locations.
 	/// </summary>
 	[Tooltip("If true, the Reset View in the universal menu will cause the pose to be reset. This should generally be enabled for applications with a stationary position in the virtual world and will allow the View Reset command to place the person back to a predefined location (such as a cockpit seat). Set this to false if you have a locomotion system because resetting the view would effectively teleport the player to potentially invalid locations.")]
-    public bool AllowRecenter = true;
+	public bool AllowRecenter = true;
 
 	/// <summary>
 	/// If true, a lower-latency update will occur right before rendering. If false, the only controller pose update will occur at the start of simulation for a given frame.
@@ -1461,14 +1468,6 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 		StaticInitializeMixedRealityCapture(this);
 #endif
 
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-		if (enableAdaptiveResolution && !OVRManager.IsAdaptiveResSupportedByEngine())
-		{
-			enableAdaptiveResolution = false;
-			UnityEngine.Debug.LogError("Your current Unity Engine " + Application.unityVersion + " might have issues to support adaptive resolution, please disable it under OVRManager");
-		}
-#endif
-
 		Initialize();
 
 		Debug.LogFormat("Current display frequency {0}, available frequencies [{1}]",
@@ -1504,6 +1503,11 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 		// be aware there are performance drops if you don't use occlusionMesh.
 		OVRPlugin.occlusionMesh = true;
 #endif
+
+		if (isInsightPassthroughEnabled)
+		{
+			InitializeInsightPassthrough();
+		}
 
 		OVRManagerinitialized = true;
 
@@ -1643,6 +1647,9 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
 			StaticShutdownMixedRealityCapture(instance);
 #endif
+
+			ShutdownInsightPassthrough();
+
 			Application.Quit();
 		}
 
@@ -1820,30 +1827,6 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 
 		_hadInputFocus = hasInputFocus;
 
-		// Changing effective rendering resolution dynamically according performance
-#if (UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN)
-
-		if (enableAdaptiveResolution)
-		{
-			if (Settings.eyeTextureResolutionScale < maxRenderScale)
-			{
-				// Allocate renderScale to max to avoid re-allocation
-				Settings.eyeTextureResolutionScale = maxRenderScale;
-			}
-			else
-			{
-				// Adjusting maxRenderScale in case app started with a larger renderScale value
-				maxRenderScale = Mathf.Max(maxRenderScale, Settings.eyeTextureResolutionScale);
-			}
-			minRenderScale = Mathf.Min(minRenderScale, maxRenderScale);
-			float minViewportScale = minRenderScale / Settings.eyeTextureResolutionScale;
-			float recommendedViewportScale = Mathf.Clamp(Mathf.Sqrt(OVRPlugin.GetAdaptiveGPUPerformanceScale()) * Settings.eyeTextureResolutionScale * Settings.renderViewportScale, 0.5f, 2.0f);
-			recommendedViewportScale /= Settings.eyeTextureResolutionScale;
-			recommendedViewportScale = Mathf.Clamp(recommendedViewportScale, minViewportScale, 1.0f);
-			Settings.renderViewportScale = recommendedViewportScale;
-		}
-#endif
-
 		// Dispatch Audio Device events.
 
 		string audioOutId = OVRPlugin.audioOutId;
@@ -1930,6 +1913,8 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || OVR_ANDROID_MRC
 		StaticUpdateMixedRealityCapture(this, gameObject, trackingOriginType);
 #endif
+
+		UpdateInsightPassthrough(isInsightPassthroughEnabled);
 	}
 
 	private void UpdateHMDEvents()
@@ -1957,10 +1942,10 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 	private static Camera FindMainCamera() {
 
 		Camera lastCamera;
-		if (lastFoundMainCamera != null && 
-		    lastFoundMainCamera.TryGetTarget(out lastCamera) && 
-		    lastCamera != null && 
-		    lastCamera.CompareTag("MainCamera"))
+		if (lastFoundMainCamera != null &&
+			lastFoundMainCamera.TryGetTarget(out lastCamera) &&
+			lastCamera != null &&
+			lastCamera.CompareTag("MainCamera"))
 		{
 			return lastCamera;
 		}
@@ -2067,17 +2052,19 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 		Debug.Log("[OVRManager] OnApplicationQuit");
 	}
 
-#endregion // Unity Messages
+	#endregion // Unity Messages
 
 	/// <summary>
 	/// Leaves the application/game and returns to the launcher/dashboard
 	/// </summary>
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public void ReturnToLauncher()
 	{
 		// show the platform UI quit prompt
 		OVRManager.PlatformUIConfirmQuit();
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static void PlatformUIConfirmQuit()
 	{
 		if (!isHmdPresent)
@@ -2222,5 +2209,70 @@ public class OVRManager : MonoBehaviour, OVRMixedRealityCaptureConfiguration
 
 #endif
 
+	private static bool _isInsightPassthroughInitialized = false;
+	private static bool _lastInsightPassthroughInitFailed = false;
+	private static bool InitializeInsightPassthrough()
+	{
+		if (_isInsightPassthroughInitialized)
+			return false;
 
+		bool passthroughResult = OVRPlugin.InitializeInsightPassthrough();
+		_isInsightPassthroughInitialized = passthroughResult;
+		_lastInsightPassthroughInitFailed = !passthroughResult;
+		if (!passthroughResult)
+		{
+			Debug.LogError("Failed to initialize Insight Passthrough. Passthrough will be unavailable.");
+		}
+		return _isInsightPassthroughInitialized;
+	}
+
+	private static void ShutdownInsightPassthrough()
+	{
+		if (_isInsightPassthroughInitialized)
+		{
+			if (OVRPlugin.ShutdownInsightPassthrough())
+			{
+				_isInsightPassthroughInitialized = false;
+			}
+			else
+			{
+				// If it did not shut down, it may already be deinitialized.
+				_isInsightPassthroughInitialized = OVRPlugin.IsInsightPassthroughInitialized();
+				if (_isInsightPassthroughInitialized)
+				{
+					Debug.LogError("Failed to shut down passthrough. It may be still in use.");
+				}
+			}
+		}
+		else
+		{
+			// Allow initialization to proceed on restart.
+			_lastInsightPassthroughInitFailed = false;
+		}
+	}
+
+	private static void UpdateInsightPassthrough(bool shouldBeEnabled)
+	{
+		if (shouldBeEnabled != _isInsightPassthroughInitialized)
+		{
+			if (shouldBeEnabled)
+			{
+				// Prevent attempts to initialize on every update if failed once.
+				if (!_lastInsightPassthroughInitFailed)
+					InitializeInsightPassthrough();
+			}
+			else
+			{
+				ShutdownInsightPassthrough();
+			}
+		}
+	}
+
+	public static bool IsInsightPassthroughInitialized() {
+		return _isInsightPassthroughInitialized;
+	}
+
+	public static bool HasInsightPassthroughInitFailed() {
+		return _lastInsightPassthroughInitFailed;
+	}
 }

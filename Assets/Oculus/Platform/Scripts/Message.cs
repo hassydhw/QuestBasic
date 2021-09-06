@@ -32,6 +32,17 @@ namespace Oculus.Platform
       var isError = CAPI.ovr_Message_IsError(c_message);
       requestID = CAPI.ovr_Message_GetRequestID(c_message);
 
+      if (!isError) {
+        var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+        if (CAPI.ovr_Message_IsError(msg)) {
+          IntPtr errorHandle = CAPI.ovr_Message_GetError(msg);
+          error = new Error(
+            CAPI.ovr_Error_GetCode(errorHandle),
+            CAPI.ovr_Error_GetMessage(errorHandle),
+            CAPI.ovr_Error_GetHttpCode(errorHandle));
+        }
+      }
+
       if (isError)
       {
         IntPtr errorHandle = CAPI.ovr_Message_GetError(c_message);
@@ -117,6 +128,16 @@ namespace Oculus.Platform
       CloudStorage_ResolveKeepRemote                      = 0x7525A306,
       CloudStorage_Save                                   = 0x4BBB5C2E,
       Entitlement_GetIsViewerEntitled                     = 0x186B58B1,
+      GroupPresence_Clear                                 = 0x6DAA9CC3,
+      GroupPresence_LaunchInvitePanel                     = 0x0F9ECF9F,
+      GroupPresence_LaunchMultiplayerErrorDialog          = 0x2955AF24,
+      GroupPresence_LaunchRejoinDialog                    = 0x1577036F,
+      GroupPresence_LaunchRosterPanel                     = 0x35728882,
+      GroupPresence_Set                                   = 0x675F5C24,
+      GroupPresence_SetDestination                        = 0x4C5B268A,
+      GroupPresence_SetIsJoinable                         = 0x2A8F1055,
+      GroupPresence_SetLobbySession                       = 0x48FF55BE,
+      GroupPresence_SetMatchSession                       = 0x314C84B8,
       IAP_ConsumePurchase                                 = 0x1FBB72D9,
       IAP_GetNextProductArrayPage                         = 0x1BD94AAF,
       IAP_GetNextPurchaseArrayPage                        = 0x47570A95,
@@ -206,6 +227,7 @@ namespace Oculus.Platform
       User_GetUserProof                                   = 0x22810483,
       User_LaunchFriendRequestFlow                        = 0x0904B598,
       User_LaunchProfile                                  = 0x0A397297,
+      Voip_GetMicrophoneAvailability                      = 0x744CE345,
       Voip_SetSystemVoipSuppressed                        = 0x453FC9AA,
 
       /// Sent when a launch intent is received (for both cold and warm starts). The
@@ -221,6 +243,24 @@ namespace Oculus.Platform
 
       /// Application that the group leader has proposed for a CAL launch.
       Notification_Cal_ProposeApplication = 0x2E7451F5,
+
+      /// Sent when the user is finished using the invite panel to send out
+      /// invitations. Contains a list of invitees.
+      Notification_GroupPresence_InvitationsSent = 0x679A84B6,
+
+      /// Sent when a user has chosen to join the destination/lobby/match. Read all
+      /// the fields to figure out where the user wants to go and take the
+      /// appropriate actions to bring them there. If the user is unable to go there,
+      /// provide adequate messaging to the user on why they cannot go there. These
+      /// notifications should be responded to immediately.
+      Notification_GroupPresence_JoinIntentReceived = 0x773889F6,
+
+      /// Sent when the user has chosen to leave the destination/lobby/match from the
+      /// Oculus menu. Read the specific fields to check the user is currently from
+      /// the destination/lobby/match and take the appropriate actions to remove
+      /// them. Update the user's presence clearing the appropriate fields to
+      /// indicate the user has left.
+      Notification_GroupPresence_LeaveIntentReceived = 0x4737EA1D,
 
       /// Sent to indicate that more data has been read or an error occured.
       Notification_HTTP_Transfer = 0x7DD46E2F,
@@ -277,10 +317,19 @@ namespace Oculus.Platform
       /// extract the updated room.
       Notification_Room_RoomUpdate = 0x60EC3C2F,
 
+      /// DEPRECATED. Do not use or expose further. Use
+      /// MessageType.Notification_GroupPresence_InvitationsSent instead
+      Notification_Session_InvitationsSent = 0x07F9C880,
+
       /// Sent when another user is attempting to establish a VoIP connection. Use
       /// Message.GetNetworkingPeer() to extract information about the user, and
       /// Voip.Accept() to accept the connection.
       Notification_Voip_ConnectRequest = 0x36243816,
+
+      /// Indicates that the current microphone availability state has been updated.
+      /// Use Voip.GetMicrophoneAvailability() to extract the microphone availability
+      /// state.
+      Notification_Voip_MicrophoneAvailabilityStateUpdate = 0x3E20CB57,
 
       /// Sent to indicate that the state of the VoIP connection changed. Use
       /// Message.GetNetworkingPeer() and NetworkingPeer.GetState() to extract the
@@ -345,9 +394,13 @@ namespace Oculus.Platform
     public virtual CloudStorageUpdateResponse GetCloudStorageUpdateResponse() { return null; }
     public virtual Dictionary<string, string> GetDataStore() { return null; }
     public virtual DestinationList GetDestinationList() { return null; }
+    public virtual GroupPresenceJoinIntent GetGroupPresenceJoinIntent() { return null; }
+    public virtual GroupPresenceLeaveIntent GetGroupPresenceLeaveIntent() { return null; }
     public virtual InstalledApplicationList GetInstalledApplicationList() { return null; }
+    public virtual InvitePanelResultInfo GetInvitePanelResultInfo() { return null; }
     public virtual LaunchBlockFlowResult GetLaunchBlockFlowResult() { return null; }
     public virtual LaunchFriendRequestFlowResult GetLaunchFriendRequestFlowResult() { return null; }
+    public virtual LaunchInvitePanelFlowResult GetLaunchInvitePanelFlowResult() { return null; }
     public virtual LaunchReportFlowResult GetLaunchReportFlowResult() { return null; }
     public virtual LaunchUnblockFlowResult GetLaunchUnblockFlowResult() { return null; }
     public virtual bool GetLeaderboardDidUpdate() { return false; }
@@ -363,6 +416,7 @@ namespace Oculus.Platform
     public virtual MatchmakingEnqueueResult GetMatchmakingEnqueueResult() { return null; }
     public virtual MatchmakingEnqueueResultAndRoom GetMatchmakingEnqueueResultAndRoom() { return null; }
     public virtual MatchmakingStats GetMatchmakingStats() { return null; }
+    public virtual MicrophoneAvailabilityState GetMicrophoneAvailabilityState() { return null; }
     public virtual NetSyncConnection GetNetSyncConnection() { return null; }
     public virtual NetSyncSessionList GetNetSyncSessionList() { return null; }
     public virtual NetSyncSessionsChangedNotification GetNetSyncSessionsChangedNotification() { return null; }
@@ -376,6 +430,7 @@ namespace Oculus.Platform
     public virtual ProductList GetProductList() { return null; }
     public virtual Purchase GetPurchase() { return null; }
     public virtual PurchaseList GetPurchaseList() { return null; }
+    public virtual RejoinDialogResult GetRejoinDialogResult() { return null; }
     public virtual Room GetRoom() { return null; }
     public virtual RoomInviteNotification GetRoomInviteNotification() { return null; }
     public virtual RoomInviteNotificationList GetRoomInviteNotificationList() { return null; }
@@ -534,6 +589,14 @@ namespace Oculus.Platform
         case Message.MessageType.ApplicationLifecycle_RegisterSessionKey:
         case Message.MessageType.Challenges_Delete:
         case Message.MessageType.Entitlement_GetIsViewerEntitled:
+        case Message.MessageType.GroupPresence_Clear:
+        case Message.MessageType.GroupPresence_LaunchMultiplayerErrorDialog:
+        case Message.MessageType.GroupPresence_LaunchRosterPanel:
+        case Message.MessageType.GroupPresence_Set:
+        case Message.MessageType.GroupPresence_SetDestination:
+        case Message.MessageType.GroupPresence_SetIsJoinable:
+        case Message.MessageType.GroupPresence_SetLobbySession:
+        case Message.MessageType.GroupPresence_SetMatchSession:
         case Message.MessageType.IAP_ConsumePurchase:
         case Message.MessageType.Livestreaming_LaunchLivestreamingFlow:
         case Message.MessageType.Matchmaking_Cancel:
@@ -549,8 +612,25 @@ namespace Oculus.Platform
           message = new Message(messageHandle);
           break;
 
+        case Message.MessageType.Notification_GroupPresence_JoinIntentReceived:
+          message = new MessageWithGroupPresenceJoinIntent(messageHandle);
+          break;
+
+        case Message.MessageType.Notification_GroupPresence_LeaveIntentReceived:
+          message = new MessageWithGroupPresenceLeaveIntent(messageHandle);
+          break;
+
+        case Message.MessageType.GroupPresence_LaunchInvitePanel:
+          message = new MessageWithInvitePanelResultInfo(messageHandle);
+          break;
+
         case Message.MessageType.User_LaunchFriendRequestFlow:
           message = new MessageWithLaunchFriendRequestFlowResult(messageHandle);
+          break;
+
+        case Message.MessageType.Notification_GroupPresence_InvitationsSent:
+        case Message.MessageType.Notification_Session_InvitationsSent:
+          message = new MessageWithLaunchInvitePanelFlowResult(messageHandle);
           break;
 
         case Message.MessageType.Leaderboard_Get:
@@ -603,6 +683,10 @@ namespace Oculus.Platform
           message = new MessageWithMatchmakingStatsUnderMatchmakingStats(messageHandle);
           break;
 
+        case Message.MessageType.Voip_GetMicrophoneAvailability:
+          message = new MessageWithMicrophoneAvailabilityState(messageHandle);
+          break;
+
         case Message.MessageType.Notification_NetSync_ConnectionStatusChanged:
           message = new MessageWithNetSyncConnection(messageHandle);
           break;
@@ -640,6 +724,10 @@ namespace Oculus.Platform
         case Message.MessageType.IAP_GetViewerPurchases:
         case Message.MessageType.IAP_GetViewerPurchasesDurableCache:
           message = new MessageWithPurchaseList(messageHandle);
+          break;
+
+        case Message.MessageType.GroupPresence_LaunchRejoinDialog:
+          message = new MessageWithRejoinDialogResult(messageHandle);
           break;
 
         case Message.MessageType.Room_Get:
@@ -696,6 +784,7 @@ namespace Oculus.Platform
         case Message.MessageType.CloudStorage2_GetUserDirectoryPath:
         case Message.MessageType.Notification_ApplicationLifecycle_LaunchIntentChanged:
         case Message.MessageType.Notification_Room_InviteAccepted:
+        case Message.MessageType.Notification_Voip_MicrophoneAvailabilityStateUpdate:
         case Message.MessageType.Notification_Vrcamera_GetSurfaceUpdate:
         case Message.MessageType.User_GetAccessToken:
           message = new MessageWithString(messageHandle);
@@ -1099,6 +1188,30 @@ namespace Oculus.Platform
     }
 
   }
+  public class MessageWithGroupPresenceJoinIntent : Message<GroupPresenceJoinIntent>
+  {
+    public MessageWithGroupPresenceJoinIntent(IntPtr c_message) : base(c_message) { }
+    public override GroupPresenceJoinIntent GetGroupPresenceJoinIntent() { return Data; }
+    protected override GroupPresenceJoinIntent GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetGroupPresenceJoinIntent(msg);
+      return new GroupPresenceJoinIntent(obj);
+    }
+
+  }
+  public class MessageWithGroupPresenceLeaveIntent : Message<GroupPresenceLeaveIntent>
+  {
+    public MessageWithGroupPresenceLeaveIntent(IntPtr c_message) : base(c_message) { }
+    public override GroupPresenceLeaveIntent GetGroupPresenceLeaveIntent() { return Data; }
+    protected override GroupPresenceLeaveIntent GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetGroupPresenceLeaveIntent(msg);
+      return new GroupPresenceLeaveIntent(obj);
+    }
+
+  }
   public class MessageWithInstalledApplicationList : Message<InstalledApplicationList>
   {
     public MessageWithInstalledApplicationList(IntPtr c_message) : base(c_message) { }
@@ -1108,6 +1221,18 @@ namespace Oculus.Platform
       var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
       var obj = CAPI.ovr_Message_GetInstalledApplicationArray(msg);
       return new InstalledApplicationList(obj);
+    }
+
+  }
+  public class MessageWithInvitePanelResultInfo : Message<InvitePanelResultInfo>
+  {
+    public MessageWithInvitePanelResultInfo(IntPtr c_message) : base(c_message) { }
+    public override InvitePanelResultInfo GetInvitePanelResultInfo() { return Data; }
+    protected override InvitePanelResultInfo GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetInvitePanelResultInfo(msg);
+      return new InvitePanelResultInfo(obj);
     }
 
   }
@@ -1132,6 +1257,18 @@ namespace Oculus.Platform
       var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
       var obj = CAPI.ovr_Message_GetLaunchFriendRequestFlowResult(msg);
       return new LaunchFriendRequestFlowResult(obj);
+    }
+
+  }
+  public class MessageWithLaunchInvitePanelFlowResult : Message<LaunchInvitePanelFlowResult>
+  {
+    public MessageWithLaunchInvitePanelFlowResult(IntPtr c_message) : base(c_message) { }
+    public override LaunchInvitePanelFlowResult GetLaunchInvitePanelFlowResult() { return Data; }
+    protected override LaunchInvitePanelFlowResult GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetLaunchInvitePanelFlowResult(msg);
+      return new LaunchInvitePanelFlowResult(obj);
     }
 
   }
@@ -1288,6 +1425,18 @@ namespace Oculus.Platform
       var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
       var obj = CAPI.ovr_Message_GetMatchmakingStats(msg);
       return new MatchmakingStats(obj);
+    }
+
+  }
+  public class MessageWithMicrophoneAvailabilityState : Message<MicrophoneAvailabilityState>
+  {
+    public MessageWithMicrophoneAvailabilityState(IntPtr c_message) : base(c_message) { }
+    public override MicrophoneAvailabilityState GetMicrophoneAvailabilityState() { return Data; }
+    protected override MicrophoneAvailabilityState GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetMicrophoneAvailabilityState(msg);
+      return new MicrophoneAvailabilityState(obj);
     }
 
   }
@@ -1456,6 +1605,18 @@ namespace Oculus.Platform
       var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
       var obj = CAPI.ovr_Message_GetPurchaseArray(msg);
       return new PurchaseList(obj);
+    }
+
+  }
+  public class MessageWithRejoinDialogResult : Message<RejoinDialogResult>
+  {
+    public MessageWithRejoinDialogResult(IntPtr c_message) : base(c_message) { }
+    public override RejoinDialogResult GetRejoinDialogResult() { return Data; }
+    protected override RejoinDialogResult GetDataFromMessage(IntPtr c_message)
+    {
+      var msg = CAPI.ovr_Message_GetNativeMessage(c_message);
+      var obj = CAPI.ovr_Message_GetRejoinDialogResult(msg);
+      return new RejoinDialogResult(obj);
     }
 
   }

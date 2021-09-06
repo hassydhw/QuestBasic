@@ -43,7 +43,7 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 	public static readonly System.Version wrapperVersion = _versionZero;
 #else
-	public static readonly System.Version wrapperVersion = OVRP_1_59_0.version;
+	public static readonly System.Version wrapperVersion = OVRP_1_64_0.version;
 #endif
 
 #if !OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -263,6 +263,7 @@ public static class OVRPlugin
 		EyeLevel = 0,
 		FloorLevel = 1,
 		Stage = 2,
+		View = 4,
 		Count,
 	}
 
@@ -344,6 +345,8 @@ public static class OVRPlugin
 		Cubemap = 2,
 		OffcenterCubemap = 4,
 		Equirect = 5,
+		ReconstructionPassthrough = 7,
+		SurfaceProjectedPassthrough = 8,
 		Fisheye = 9,
 	}
 
@@ -769,12 +772,30 @@ public static class OVRPlugin
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Sizei
+	public struct Sizei : IEquatable<Sizei>
 	{
 		public int w;
 		public int h;
 
 		public static readonly Sizei zero = new Sizei { w = 0, h = 0 };
+
+		public bool Equals(Sizei other)
+		{
+			return w == other.w && h == other.h;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is Sizei other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				return (w * 397) ^ h;
+			}
+		}
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -824,10 +845,12 @@ public static class OVRPlugin
 
 	public enum BoundaryType
 	{
+		[System.Obsolete("Deprecated. This enum value will not be supported in OpenXR", false)]
 		OuterBoundary = 0x0001,
 		PlayArea = 0x0100,
 	}
 
+	[System.Obsolete("Deprecated. This struct will not be supported in OpenXR", false)]
 	[StructLayout(LayoutKind.Sequential)]
 	public struct BoundaryTestResult
 	{
@@ -940,6 +963,15 @@ public static class OVRPlugin
 				+ delim + Format.ToString()
 				+ delim + LayerFlags.ToString();
 		}
+	}
+
+	public enum BlendFactor {
+		Zero = 0,
+		One = 1,
+		SrcAlpha = 2,
+		OneMinusSrcAlpha = 3,
+		DstAlpha = 4,
+ 		OneMinusDstAlpha = 5
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -1265,7 +1297,7 @@ public static class OVRPlugin
 	}
 
 
-	public enum ColorSpace
+  public enum ColorSpace
 	{
 		/// The default value from GetHmdColorSpace until SetClientColorDesc is called. Only valid on PC, and will be remapped to Quest on Mobile
 		Unknown = 0,
@@ -1291,6 +1323,7 @@ public static class OVRPlugin
 	{
 		Unknown = 0,
 		DisplayRefreshRateChanged = 1,
+
 	}
 
 	private const int EventDataBufferSize = 4000;
@@ -1304,7 +1337,32 @@ public static class OVRPlugin
 	}
 
 
-/// Insight SDK type definitions
+	public enum InsightPassthroughColorMapType
+	{
+		None = 0,
+		MonoToRgba = 1,
+		MonoToMono = 2,
+	}
+
+	public enum InsightPassthroughStyleFlags
+	{
+		HasTextureOpacityFactor = 1 << 0,
+		HasEdgeColor = 1 << 1,
+		HasTextureColorMap = 1 << 2
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct InsightPassthroughStyle
+	{
+		public InsightPassthroughStyleFlags Flags;
+		public float TextureOpacityFactor;
+		public Colorf EdgeColor;
+		public InsightPassthroughColorMapType TextureColorMapType;
+		public uint TextureColorMapDataSize;
+		public IntPtr TextureColorMapData;
+	}
+
+/// SceneApi definitions
 
 	public static bool initialized
 	{
@@ -1513,6 +1571,7 @@ public static class OVRPlugin
 		}
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static bool headphonesPresent
 	{
 		get {
@@ -1774,6 +1833,7 @@ public static class OVRPlugin
 		}
 	}
 
+	[System.Obsolete("Deprecated. Please use SystemInfo.batteryLevel", false)]
 	public static float batteryLevel
 	{
 		get {
@@ -1785,6 +1845,7 @@ public static class OVRPlugin
 		}
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static float batteryTemperature
 	{
 		get {
@@ -1850,6 +1911,7 @@ public static class OVRPlugin
 		}
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static float systemVolume
 	{
 		get {
@@ -1900,6 +1962,7 @@ public static class OVRPlugin
 		}
 	}
 
+	[System.Obsolete("Deprecated. Please use SystemInfo.batteryStatus", false)]
 	public static BatteryStatus batteryStatus
 	{
 		get {
@@ -1947,6 +2010,7 @@ public static class OVRPlugin
 #endif
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static bool ShowUI(PlatformUI ui)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -2025,7 +2089,6 @@ public static class OVRPlugin
 #endif
 				return false;
 			}
-
 			if (version >= OVRP_1_34_0.version && layerId != -1)
 				return OVRP_1_34_0.ovrp_EnqueueSubmitLayer2(flags, leftTexture, rightTexture, layerId, frameIndex, ref pose, ref scale, layerIndex,
 				overrideTextureRectMatrix ? Bool.True : Bool.False, ref textureRectMatrix, overridePerLayerColorScaleAndOffset ? Bool.True : Bool.False, ref colorScale, ref colorOffset) == Result.Success;
@@ -2574,6 +2637,7 @@ public static class OVRPlugin
 #endif
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static BoundaryTestResult TestBoundaryNode(Node nodeId, BoundaryType boundaryType)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -2590,6 +2654,7 @@ public static class OVRPlugin
 #endif
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static BoundaryTestResult TestBoundaryPoint(Vector3f point, BoundaryType boundaryType)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -2641,11 +2706,22 @@ public static class OVRPlugin
 #endif
 	}
 
+	private static bool perfStatWarningPrinted = false;
 	public static AppPerfStats GetAppPerfStats()
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 		return new AppPerfStats();
 #else
+		if (nativeXrApi == XrApi.OpenXR)
+		{
+			if (!perfStatWarningPrinted)
+			{
+				Debug.LogWarning("GetAppPerfStats is currently unsupported on OpenXR.");
+				perfStatWarningPrinted = true;
+			}
+			return new AppPerfStats();
+		}
+
 		if (version >= OVRP_1_9_0.version)
 		{
 			return OVRP_1_9_0.ovrp_GetAppPerfStats();
@@ -2657,11 +2733,21 @@ public static class OVRPlugin
 #endif
 	}
 
+	private static bool resetPerfStatWarningPrinted = false;
 	public static bool ResetAppPerfStats()
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 		return false;
 #else
+		if (nativeXrApi == XrApi.OpenXR)
+		{
+			if (!resetPerfStatWarningPrinted)
+			{
+				Debug.LogWarning("ResetAppPerfStats is currently unsupported on OpenXR.");
+				resetPerfStatWarningPrinted = true;
+			}
+			return false;
+		}
 
 		if (version >= OVRP_1_9_0.version)
 		{
@@ -3109,6 +3195,204 @@ public static class OVRPlugin
 #endif
 	}
 
+	public static bool InitializeInsightPassthrough()
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_InitializeInsightPassthrough();
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool ShutdownInsightPassthrough()
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_ShutdownInsightPassthrough();
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool IsInsightPassthroughInitialized()
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Bool result = OVRP_1_63_0.ovrp_GetInsightPassthroughInitialized();
+			return result == Bool.True;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool CreateInsightTriangleMesh(int layerId, Vector3[] vertices, int[] triangles, out ulong meshHandle)
+	{
+		meshHandle = 0;
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			if (vertices == null || triangles == null || vertices.Length == 0 || triangles.Length == 0)
+			{
+				return false;
+			}
+			int vertexCount = vertices.Length;
+			int triangleCount = triangles.Length / 3;
+			GCHandle pinnedVertexData = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+			IntPtr vertexDataPtr = pinnedVertexData.AddrOfPinnedObject();
+			GCHandle pinnedTriangleData = GCHandle.Alloc(triangles, GCHandleType.Pinned);
+			IntPtr triangleDataPtr = pinnedTriangleData.AddrOfPinnedObject();
+			Result result = OVRP_1_63_0.ovrp_CreateInsightTriangleMesh(
+				layerId, vertexDataPtr, vertexCount, triangleDataPtr, triangleCount, out meshHandle);
+			pinnedTriangleData.Free();
+			pinnedVertexData.Free();
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool DestroyInsightTriangleMesh(ulong meshHandle)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_DestroyInsightTriangleMesh(meshHandle);
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool AddInsightPassthroughSurfaceGeometry(int layerId, ulong meshHandle, Matrix4x4 T_world_model, out ulong geometryInstanceHandle)
+	{
+		geometryInstanceHandle = 0;
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_AddInsightPassthroughSurfaceGeometry(layerId, meshHandle, T_world_model, out geometryInstanceHandle);
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool DestroyInsightPassthroughGeometryInstance(ulong geometryInstanceHandle)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_DestroyInsightPassthroughGeometryInstance(geometryInstanceHandle);
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool UpdateInsightPassthroughGeometryTransform(ulong geometryInstanceHandle, Matrix4x4 transform)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_UpdateInsightPassthroughGeometryTransform(geometryInstanceHandle, transform);
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+	public static bool SetInsightPassthroughStyle(int layerId, InsightPassthroughStyle style)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_63_0.version)
+		{
+			Result result = OVRP_1_63_0.ovrp_SetInsightPassthroughStyle(layerId, style);
+			if (result != Result.Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
 
 	public static Vector3f GetBoundaryDimensions(BoundaryType boundaryType)
 	{
@@ -3126,6 +3410,7 @@ public static class OVRPlugin
 #endif
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static bool GetBoundaryVisible()
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -3142,6 +3427,7 @@ public static class OVRPlugin
 #endif
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static bool SetBoundaryVisible(bool value)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -4807,6 +5093,7 @@ public static class OVRPlugin
 #endif
 	}
 
+	[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 	public static float GetAdaptiveGPUPerformanceScale()
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -5299,6 +5586,7 @@ public static class OVRPlugin
 #endif
 	}
 
+
 	private const string pluginName = "OVRPlugin";
 	private static System.Version _versionZero = new System.Version(0, 0, 0);
 
@@ -5589,9 +5877,11 @@ public static class OVRPlugin
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Bool ovrp_GetBoundaryConfigured();
 
+		[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern BoundaryTestResult ovrp_TestBoundaryNode(Node nodeId, BoundaryType boundaryType);
 
+		[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern BoundaryTestResult ovrp_TestBoundaryPoint(Vector3f point, BoundaryType boundaryType);
 
@@ -5601,9 +5891,11 @@ public static class OVRPlugin
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Vector3f ovrp_GetBoundaryDimensions(BoundaryType boundaryType);
 
+		[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Bool ovrp_GetBoundaryVisible();
 
+		[System.Obsolete("Deprecated. This function will not be supported in OpenXR", false)]
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Bool ovrp_SetBoundaryVisible(Bool value);
 
@@ -6288,7 +6580,64 @@ public static class OVRPlugin
 	private static class OVRP_1_59_0
 	{
 		public static readonly System.Version version = new System.Version(1, 59, 0);
+	}
+
+	private static class OVRP_1_60_0
+	{
+		public static readonly System.Version version = new System.Version(1, 60, 0);
 
 	}
+
+	private static class OVRP_1_61_0
+	{
+		public static readonly System.Version version = new System.Version(1, 61, 0);
+	}
+
+	private static class OVRP_1_62_0
+	{
+		public static readonly System.Version version = new System.Version(1, 62, 0);
+	}
+
+	private static class OVRP_1_63_0
+	{
+		public static readonly System.Version version = new System.Version(1, 63, 0);
+
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_InitializeInsightPassthrough();
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_ShutdownInsightPassthrough();
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Bool ovrp_GetInsightPassthroughInitialized();
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_SetInsightPassthroughStyle(int layerId, InsightPassthroughStyle style);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_CreateInsightTriangleMesh(
+			int layerId, IntPtr vertices, int vertexCount, IntPtr triangles, int triangleCount, out ulong meshHandle);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_DestroyInsightTriangleMesh(ulong meshHandle);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_AddInsightPassthroughSurfaceGeometry(int layerId, ulong meshHandle, Matrix4x4 T_world_model, out ulong geometryInstanceHandle);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_DestroyInsightPassthroughGeometryInstance(ulong geometryInstanceHandle);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_UpdateInsightPassthroughGeometryTransform(ulong geometryInstanceHandle, Matrix4x4 T_world_model);
+	}
 #endif // !OVRPLUGIN_UNSUPPORTED_PLATFORM
+
+	private static class OVRP_1_64_0
+	{
+		public static readonly System.Version version = new System.Version(1, 64, 0);
+
+
+
+	}
 }

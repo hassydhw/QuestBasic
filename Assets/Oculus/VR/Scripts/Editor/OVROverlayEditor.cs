@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -95,6 +96,26 @@ public class OVROverlayEditor : Editor
 		Bottom
 	}
 
+	private GUIContent[] selectableShapeNames;
+	private OVROverlay.OverlayShape[] selectableShapeValues;
+
+	private void Awake()
+	{
+		List<GUIContent> selectableShapeNameList = new List<GUIContent>();
+		List<OVROverlay.OverlayShape> selectableShapesValueList = new List<OVROverlay.OverlayShape>();
+		foreach (OVROverlay.OverlayShape value in Enum.GetValues(typeof(OVROverlay.OverlayShape)))
+		{
+			if (!OVROverlay.IsPassthroughShape(value))
+			{
+				string name = Enum.GetName(typeof(OVROverlay.OverlayShape), value);
+				selectableShapeNameList.Add(new GUIContent(name, name));
+				selectableShapesValueList.Add(value);
+			}
+		}
+		selectableShapeNames = selectableShapeNameList.ToArray();
+		selectableShapeValues = selectableShapesValueList.ToArray();
+	}
+
 	public override void OnInspectorGUI()
 	{
 		OVROverlay overlay = (OVROverlay)target;
@@ -110,7 +131,15 @@ public class OVROverlayEditor : Editor
 		EditorGUILayout.Space();
 
 		EditorGUILayout.LabelField(new GUIContent("Overlay Shape", "The shape of this overlay"), EditorStyles.boldLabel);
-		overlay.currentOverlayShape = (OVROverlay.OverlayShape)EditorGUILayout.EnumPopup(new GUIContent("Overlay Shape", "The shape of this overlay"), overlay.currentOverlayShape);
+		int currentShapeIndex = Array.IndexOf(selectableShapeValues, overlay.currentOverlayShape);
+		if (currentShapeIndex == -1) {
+			Debug.LogError("Invalid shape encountered");
+			currentShapeIndex = 0;
+		}
+		currentShapeIndex = EditorGUILayout.Popup(new GUIContent("Overlay Shape", "The shape of this overlay"), currentShapeIndex, selectableShapeNames);
+		overlay.currentOverlayShape = selectableShapeValues[currentShapeIndex];
+
+
 		EditorGUILayout.Space();
 
 		EditorGUILayout.Separator();
@@ -320,8 +349,6 @@ public class OVROverlayEditor : Editor
 			}
 		}
 
-
-
 		EditorGUILayout.Separator();
 		EditorGUILayout.LabelField("Color Scale", EditorStyles.boldLabel);
 		EditorGUILayout.Space();
@@ -336,6 +363,8 @@ public class OVROverlayEditor : Editor
 		EditorGUILayout.Separator();
 		EditorGUILayout.LabelField("Preview", EditorStyles.boldLabel);
 		overlay.previewInEditor = EditorGUILayout.Toggle(new GUIContent("Preview in Editor (Experimental)", "Preview the overlay in the editor using a mesh renderer."), overlay.previewInEditor);
+
+
 
 		EditorUtility.SetDirty(overlay);
 	}

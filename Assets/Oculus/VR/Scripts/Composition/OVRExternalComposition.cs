@@ -21,9 +21,13 @@ using System.Threading;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
+#if USING_URP
+using UnityEngine.Rendering.Universal;
+#endif
+
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
 
-public class OVRExternalComposition : OVRComposition 
+public class OVRExternalComposition : OVRComposition
 {
 	private GameObject previousMainCameraObject = null;
 	public GameObject foregroundCameraGameObject = null;
@@ -48,7 +52,7 @@ public class OVRExternalComposition : OVRComposition
 	public override OVRManager.CompositionMethod CompositionMethod() { return OVRManager.CompositionMethod.External; }
 
 	public OVRExternalComposition(GameObject parentObject, Camera mainCamera, OVRMixedRealityCaptureConfiguration configuration)
-		: base(parentObject, mainCamera, configuration) 
+		: base(parentObject, mainCamera, configuration)
 	{
 
 #if OVR_ANDROID_MRC
@@ -95,11 +99,11 @@ public class OVRExternalComposition : OVRComposition
 			RefreshCameraRig(parentObject, mainCamera);
 
 			Debug.Assert(backgroundCameraGameObject == null);
-			if (configuration.instantiateMixedRealityCameraGameObject != null) 
+			if (configuration.instantiateMixedRealityCameraGameObject != null)
 			{
 				backgroundCameraGameObject = configuration.instantiateMixedRealityCameraGameObject(mainCamera.gameObject, OVRManager.MrcCameraType.Background);
 			}
-			else 
+			else
 			{
 				backgroundCameraGameObject = Object.Instantiate(mainCamera.gameObject);
 			}
@@ -116,7 +120,17 @@ public class OVRExternalComposition : OVRComposition
 			}
 			backgroundCamera = backgroundCameraGameObject.GetComponent<Camera>();
 			backgroundCamera.tag = "Untagged";
+#if USING_MRC_COMPATIBLE_URP_VERSION
+			var backgroundCamData = backgroundCamera.GetUniversalAdditionalCameraData();
+			if (backgroundCamData != null)
+			{
+				backgroundCamData.allowXRRendering = false;
+			}
+#elif USING_URP
+			Debug.LogError("Using URP with MRC is only supported with URP version 10.0.0 or higher. Consider using Unity 2020 or higher.");
+#else
 			backgroundCamera.stereoTargetEye = StereoTargetEyeMask.None;
+#endif
 			backgroundCamera.depth = 99990.0f;
 			backgroundCamera.rect = new Rect(0.0f, 0.0f, 0.5f, 1.0f);
 			backgroundCamera.cullingMask = (backgroundCamera.cullingMask & ~configuration.extraHiddenLayers) | configuration.extraVisibleLayers;
@@ -129,15 +143,15 @@ public class OVRExternalComposition : OVRComposition
 #endif
 
 			Debug.Assert(foregroundCameraGameObject == null);
-			if (configuration.instantiateMixedRealityCameraGameObject != null) 
+			if (configuration.instantiateMixedRealityCameraGameObject != null)
 			{
 				foregroundCameraGameObject = configuration.instantiateMixedRealityCameraGameObject(mainCamera.gameObject, OVRManager.MrcCameraType.Foreground);
 			}
-			else 
+			else
 			{
 				foregroundCameraGameObject = Object.Instantiate(mainCamera.gameObject);
 			}
-			
+
 			foregroundCameraGameObject.name = "OculusMRC_ForgroundCamera";
 			foregroundCameraGameObject.transform.parent = cameraInTrackingSpace ? cameraRig.trackingSpace : parentObject.transform;
 			if (foregroundCameraGameObject.GetComponent<AudioListener>())
@@ -150,7 +164,17 @@ public class OVRExternalComposition : OVRComposition
 			}
 			foregroundCamera = foregroundCameraGameObject.GetComponent<Camera>();
 			foregroundCamera.tag = "Untagged";
+#if USING_MRC_COMPATIBLE_URP_VERSION
+			var foregroundCamData = foregroundCamera.GetUniversalAdditionalCameraData();
+			if (foregroundCamData != null)
+            {
+				foregroundCamData.allowXRRendering = false;
+            }
+#elif USING_URP
+			Debug.LogError("Using URP with MRC is only supported with URP version 10.0.0 or higher. Consider using Unity 2020 or higher.");
+#else
 			foregroundCamera.stereoTargetEye = StereoTargetEyeMask.None;
+#endif
 			foregroundCamera.depth = backgroundCamera.depth + 1.0f;     // enforce the forground be rendered after the background
 			foregroundCamera.rect = new Rect(0.5f, 0.0f, 0.5f, 1.0f);
 			foregroundCamera.clearFlags = CameraClearFlags.Color;
@@ -160,7 +184,7 @@ public class OVRExternalComposition : OVRComposition
 			foregroundCamera.backgroundColor = configuration.externalCompositionBackdropColorRift;
 #endif
 			foregroundCamera.cullingMask = (foregroundCamera.cullingMask & ~configuration.extraHiddenLayers) | configuration.extraVisibleLayers;
-			
+
 #if OVR_ANDROID_MRC
 			if (renderCombinedFrame)
 			{
@@ -327,14 +351,14 @@ public class OVRExternalComposition : OVRComposition
 
 		backgroundCamera.clearFlags = mainCamera.clearFlags;
 		backgroundCamera.backgroundColor = mainCamera.backgroundColor;
-		if (configuration.dynamicCullingMask) 
+		if (configuration.dynamicCullingMask)
 		{
 			backgroundCamera.cullingMask = (mainCamera.cullingMask & ~configuration.extraHiddenLayers) | configuration.extraVisibleLayers;
 		}
 		backgroundCamera.nearClipPlane = mainCamera.nearClipPlane;
 		backgroundCamera.farClipPlane = mainCamera.farClipPlane;
 
-		if (configuration.dynamicCullingMask) 
+		if (configuration.dynamicCullingMask)
 		{
 			foregroundCamera.cullingMask = (mainCamera.cullingMask & ~configuration.extraHiddenLayers) | configuration.extraVisibleLayers;
 		}

@@ -1237,6 +1237,180 @@ namespace Oculus.Platform
   {
   }
 
+  public static partial class GroupPresence
+  {
+    /// Clear rich presence for running app
+    ///
+    public static Request Clear()
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_Clear());
+      }
+
+      return null;
+    }
+
+    /// Launch the flow to allow the user to invite others to their current
+    /// session. This can only be used if the user is in a joinable session.
+    ///
+    public static Request<Models.InvitePanelResultInfo> LaunchInvitePanel(InviteOptions options)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.InvitePanelResultInfo>(CAPI.ovr_GroupPresence_LaunchInvitePanel((IntPtr)options));
+      }
+
+      return null;
+    }
+
+    /// Launch an error dialog with predefined messages for common multiplayer
+    /// errors.
+    ///
+    public static Request LaunchMultiplayerErrorDialog(MultiplayerErrorOptions options)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_LaunchMultiplayerErrorDialog((IntPtr)options));
+      }
+
+      return null;
+    }
+
+    /// Launch the dialog which will allow the user to rejoin a previous
+    /// lobby/match. Either the lobby_session_id or the match_session_id, or both,
+    /// must be populated.
+    ///
+    public static Request<Models.RejoinDialogResult> LaunchRejoinDialog(string lobby_session_id, string match_session_id, string destination_api_name)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.RejoinDialogResult>(CAPI.ovr_GroupPresence_LaunchRejoinDialog(lobby_session_id, match_session_id, destination_api_name));
+      }
+
+      return null;
+    }
+
+    /// Launch the panel which displays the current users in the roster. Users with
+    /// the same lobby and match session id as part of their presence will show up
+    /// here.
+    ///
+    public static Request LaunchRosterPanel(RosterOptions options)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_LaunchRosterPanel((IntPtr)options));
+      }
+
+      return null;
+    }
+
+    /// Set rich presence for running app
+    ///
+    public static Request Set(GroupPresenceOptions groupPresenceOptions)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_Set((IntPtr)groupPresenceOptions));
+      }
+
+      return null;
+    }
+
+    /// Replaces the user's current destination for the provided one. All other
+    /// existing rich presence parameters will remain the same.
+    ///
+    public static Request SetDestination(string api_name)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_SetDestination(api_name));
+      }
+
+      return null;
+    }
+
+    /// Set if the current user's destination and session is joinable while keeping
+    /// the other rich presence parameters the same. If the destination or session
+    /// ids of the user is not set, they cannot be set to joinable.
+    ///
+    public static Request SetIsJoinable(bool is_joinable)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_SetIsJoinable(is_joinable));
+      }
+
+      return null;
+    }
+
+    /// Replaces the user's current lobby session id for the provided one. All
+    /// other existing rich presence parameters will remain the same.
+    ///
+    public static Request SetLobbySession(string id)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_SetLobbySession(id));
+      }
+
+      return null;
+    }
+
+    /// Replaces the user's current match session id for the provided one. All
+    /// other existing rich presence parameters will remain the same.
+    ///
+    public static Request SetMatchSession(string id)
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request(CAPI.ovr_GroupPresence_SetMatchSession(id));
+      }
+
+      return null;
+    }
+
+    /// Sent when the user is finished using the invite panel to send out
+    /// invitations. Contains a list of invitees.
+    ///
+    public static void SetInvitationsSentNotificationCallback(Message<Models.LaunchInvitePanelFlowResult>.Callback callback)
+    {
+      Callback.SetNotificationCallback(
+        Message.MessageType.Notification_GroupPresence_InvitationsSent,
+        callback
+      );
+    }
+
+    /// Sent when a user has chosen to join the destination/lobby/match. Read all
+    /// the fields to figure out where the user wants to go and take the
+    /// appropriate actions to bring them there. If the user is unable to go there,
+    /// provide adequate messaging to the user on why they cannot go there. These
+    /// notifications should be responded to immediately.
+    ///
+    public static void SetJoinIntentReceivedNotificationCallback(Message<Models.GroupPresenceJoinIntent>.Callback callback)
+    {
+      Callback.SetNotificationCallback(
+        Message.MessageType.Notification_GroupPresence_JoinIntentReceived,
+        callback
+      );
+    }
+
+    /// Sent when the user has chosen to leave the destination/lobby/match from the
+    /// Oculus menu. Read the specific fields to check the user is currently from
+    /// the destination/lobby/match and take the appropriate actions to remove
+    /// them. Update the user's presence clearing the appropriate fields to
+    /// indicate the user has left.
+    ///
+    public static void SetLeaveIntentReceivedNotificationCallback(Message<Models.GroupPresenceLeaveIntent>.Callback callback)
+    {
+      Callback.SetNotificationCallback(
+        Message.MessageType.Notification_GroupPresence_LeaveIntentReceived,
+        callback
+      );
+    }
+
+  }
+
   public static partial class HTTP
   {
   }
@@ -1378,6 +1552,8 @@ namespace Oculus.Platform
     /// \param startAt Defines whether to center the query on the user or start at the top of the leaderboard.
     ///
     /// <b>Error codes</b>
+    /// - \b 100: Parameter {parameter}: invalid user id: {user_id}
+    /// - \b 100: Something went wrong.
     /// - \b 12074: You're not yet ranked on this leaderboard.
     ///
     public static Request<Models.LeaderboardEntryList> GetEntries(string leaderboardName, int limit, LeaderboardFilterType filter, LeaderboardStartAt startAt)
@@ -1430,6 +1606,8 @@ namespace Oculus.Platform
     ///
     /// <b>Error codes</b>
     /// - \b 100: Parameter {parameter}: invalid user id: {user_id}
+    /// - \b 100: Something went wrong.
+    /// - \b 100: This leaderboard entry is too late for the leaderboard's allowed time window.
     ///
     public static Request<bool> WriteEntry(string leaderboardName, long score, byte[] extraData = null, bool forceUpdate = false)
     {
@@ -1447,6 +1625,11 @@ namespace Oculus.Platform
     /// \param supplementaryMetric A metric that can be used for tiebreakers.
     /// \param extraData A 2KB custom data field that is associated with the leaderboard entry. This can be a game replay or anything that provides more detail about the entry to the viewer.
     /// \param forceUpdate If true, the score always updates. This happens ecen if it is not the user's best score.
+    ///
+    /// <b>Error codes</b>
+    /// - \b 100: Parameter {parameter}: invalid user id: {user_id}
+    /// - \b 100: Something went wrong.
+    /// - \b 100: This leaderboard entry is too late for the leaderboard's allowed time window.
     ///
     public static Request<bool> WriteEntryWithSupplementaryMetric(string leaderboardName, long score, long supplementaryMetric, byte[] extraData = null, bool forceUpdate = false)
     {
@@ -2068,6 +2251,10 @@ namespace Oculus.Platform
     /// \param maxUsers The maximum number of users allowed in the room, including the creator.
     /// \param subscribeToUpdates If true, sends a message with type MessageType.Notification_Room_RoomUpdate when room data changes, such as when users join or leave.
     ///
+    /// <b>Error codes</b>
+    /// - \b 100: Something went wrong.
+    /// - \b 12037: Rooms cannot allow more than {limit} users to join. Please set the max users to a lower amount.
+    ///
     public static Request<Models.Room> CreateAndJoinPrivate(RoomJoinPolicy joinPolicy, uint maxUsers, bool subscribeToUpdates = false)
     {
       if (Core.IsInitialized())
@@ -2085,6 +2272,10 @@ namespace Oculus.Platform
     /// \param joinPolicy Specifies who can join the room without an invite.
     /// \param maxUsers The maximum number of users allowed in the room, including the creator.
     /// \param roomOptions Additional room configuration for this request. Optional.
+    ///
+    /// <b>Error codes</b>
+    /// - \b 100: Something went wrong.
+    /// - \b 12037: Rooms cannot allow more than {limit} users to join. Please set the max users to a lower amount.
     ///
     public static Request<Models.Room> CreateAndJoinPrivate2(RoomJoinPolicy joinPolicy, uint maxUsers, RoomOptions roomOptions)
     {
@@ -2314,6 +2505,9 @@ namespace Oculus.Platform
     /// it succeeds
     /// \param roomID The room you're currently in.
     ///
+    /// <b>Error codes</b>
+    /// - \b 100: Something went wrong.
+    ///
     public static Request<Models.Room> Leave(UInt64 roomID)
     {
       if (Core.IsInitialized())
@@ -2353,6 +2547,7 @@ namespace Oculus.Platform
     /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is currently in another room (perhaps on another device), and thus is no longer in this room. Users can only be in one room at a time. If they are active on two different devices at once, there will be undefined behavior.
     /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is not in the room (or any room). Perhaps they already left, or they stopped heartbeating. If this is a test environment, make sure you are not using the deprecated initialization methods ovr_PlatformInitializeStandaloneAccessToken (C++)/StandalonePlatform.Initialize(accessToken) (C#).
     /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is not the owner of the room.
+    /// - \b 100: Invalid room_id: {room_id}. Either the ID is not a valid room or the user does not have permission to see or act on the room.
     ///
     public static Request<Models.Room> UpdateMembershipLockStatus(UInt64 roomID, RoomMembershipLockStatus membershipLockStatus)
     {
@@ -2368,6 +2563,12 @@ namespace Oculus.Platform
     /// \param roomID The room that the user owns (check Room.GetOwner()).
     /// \param userID The new user to make an owner; the user must be in the room.
     ///
+    /// <b>Error codes</b>
+    /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is currently in another room (perhaps on another device), and thus is no longer in this room. Users can only be in one room at a time. If they are active on two different devices at once, there will be undefined behavior.
+    /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is not in the room (or any room). Perhaps they already left, or they stopped heartbeating. If this is a test environment, make sure you are not using the deprecated initialization methods ovr_PlatformInitializeStandaloneAccessToken (C++)/StandalonePlatform.Initialize(accessToken) (C#).
+    /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is not the owner of the room.
+    /// - \b 100: Parameter {parameter}: invalid user id: {user_id}
+    ///
     public static Request UpdateOwner(UInt64 roomID, UInt64 userID)
     {
       if (Core.IsInitialized())
@@ -2381,6 +2582,10 @@ namespace Oculus.Platform
     /// Sets the join policy of the user's private room.
     /// \param roomID The room ID that the user owns (check Room.GetOwner()).
     /// \param newJoinPolicy The new join policy for the room.
+    ///
+    /// <b>Error codes</b>
+    /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is currently in another room (perhaps on another device), and thus is no longer in this room. Users can only be in one room at a time. If they are active on two different devices at once, there will be undefined behavior.
+    /// - \b 10: Room {room_id}: The user does not have permission to {cannot_action} because the user is not in the room (or any room). Perhaps they already left, or they stopped heartbeating. If this is a test environment, make sure you are not using the deprecated initialization methods ovr_PlatformInitializeStandaloneAccessToken (C++)/StandalonePlatform.Initialize(accessToken) (C#).
     ///
     public static Request<Models.Room> UpdatePrivateRoomJoinPolicy(UInt64 roomID, RoomJoinPolicy newJoinPolicy)
     {
@@ -2433,6 +2638,10 @@ namespace Oculus.Platform
 
   }
 
+  public static partial class Session
+  {
+  }
+
   public static partial class Users
   {
     /// Retrieve the user with the given ID. This might fail if the ID is invalid
@@ -2470,6 +2679,9 @@ namespace Oculus.Platform
     /// 'online' in your application.
     ///
     /// NOTE: Users will have a unique ID per application.
+    ///
+    /// <b>Error codes</b>
+    /// - \b 100: Something went wrong.
     ///
     public static Request<Models.User> GetLoggedInUser()
     {
@@ -2726,8 +2938,24 @@ namespace Oculus.Platform
 
   public static partial class Voip
   {
+    /// Gets whether the microphone is currently available to the app. This can be
+    /// used to show if the user's voice is able to be heard by other users.
+    ///
+    public static Request<Models.MicrophoneAvailabilityState> GetMicrophoneAvailability()
+    {
+      if (Core.IsInitialized())
+      {
+        return new Request<Models.MicrophoneAvailabilityState>(CAPI.ovr_Voip_GetMicrophoneAvailability());
+      }
+
+      return null;
+    }
+
     /// Sets whether SystemVoip should be suppressed so that this app's Voip can
-    /// use the mic and play incoming Voip audio.
+    /// use the mic and play incoming Voip audio. Once microphone switching
+    /// functionality for the user is released, this function will no longer work.
+    /// You can use get_microphone_availability to see if the user has allowed the
+    /// app access to the microphone.
     ///
     public static Request<Models.SystemVoipState> SetSystemVoipSuppressed(bool suppressed)
     {
@@ -2747,6 +2975,18 @@ namespace Oculus.Platform
     {
       Callback.SetNotificationCallback(
         Message.MessageType.Notification_Voip_ConnectRequest,
+        callback
+      );
+    }
+
+    /// Indicates that the current microphone availability state has been updated.
+    /// Use Voip.GetMicrophoneAvailability() to extract the microphone availability
+    /// state.
+    ///
+    public static void SetMicrophoneAvailabilityStateUpdateNotificationCallback(Message<string>.Callback callback)
+    {
+      Callback.SetNotificationCallback(
+        Message.MessageType.Notification_Voip_MicrophoneAvailabilityStateUpdate,
         callback
       );
     }

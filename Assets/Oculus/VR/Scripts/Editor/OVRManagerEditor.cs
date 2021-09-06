@@ -48,7 +48,7 @@ public class OVRManagerEditor : Editor
         OVRProjectConfigEditor.DrawProjectConfigInspector(projectConfig);
 
 		EditorGUILayout.Space();
-		EditorGUILayout.LabelField("Mixed Reality Capture for Quest (experimental)", EditorStyles.boldLabel);
+		EditorGUILayout.LabelField("Mixed Reality Capture for Quest", EditorStyles.boldLabel);
 		EditorGUI.indentLevel++;
 		OVREditorUtil.SetupEnumField(target, "ActivationMode", ref manager.mrcActivationMode, ref modified);
 		EditorGUI.indentLevel--;
@@ -131,6 +131,25 @@ public class OVRManagerEditor : Editor
 
 			EditorGUI.indentLevel--;
 		}
+#endif
+
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_ANDROID
+		// Insight Passthrough section
+#if UNITY_ANDROID
+		EditorGUI.BeginDisabledGroup(!(projectConfig.insightPassthroughEnabled && projectConfig.experimentalFeaturesEnabled));
+		GUIContent enablePassthroughContent = new GUIContent("Enable passthrough", "Enables passthrough functionality for the scene. Can be turned on or off at runtime. Note that passthrough functionality must be enabled in the project settings for the feature to be functional.");
+#else
+		GUIContent enablePassthroughContent = new GUIContent("Enable passthrough", "Enables passthrough functionality for the scene. Can be turned on or off at runtime.");
+#endif
+		EditorGUILayout.Space();
+		EditorGUILayout.LabelField("Insight Passthrough", EditorStyles.boldLabel);
+#if UNITY_ANDROID
+		EditorGUILayout.LabelField("Requires Experimental Passthrough Capability enabled in the project settings.", EditorStyles.wordWrappedLabel);
+#endif
+		OVREditorUtil.SetupBoolField(target, enablePassthroughContent, ref manager.isInsightPassthroughEnabled, ref modified);
+#if UNITY_ANDROID
+		EditorGUI.EndDisabledGroup();
+#endif
 #endif
 
         if (modified)
