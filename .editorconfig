@@ -1,0 +1,19 @@
+# Remove the line below if you want to inherit .editorconfig settings from higher directories
+root = true
+
+# for all text files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# files
+[*.cs]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
