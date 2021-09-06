@@ -13,11 +13,11 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 （動作検証に使ったQuestのファームのバージョン　28.0.0.xxxxxxxxxxxxx）
 
 ## Unityバージョン
-* 2019.4.11.f1  
-2019.4系なら問題なく動くと思います  
+* 2019.4.23.f1  
+2019.4系以降であれば問題なく動くと思います  
 
 ## 使用ライブラリ
-* Oculus Integration version 28.0  
+* Oculus Integration version 32.0  
 <https://developer.oculus.com/downloads/package/unity-integration/>
 
   プロジェクト内に同梱しています
