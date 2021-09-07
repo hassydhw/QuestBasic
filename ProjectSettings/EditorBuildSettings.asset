@@ -56,4 +56,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_QuestBasics/_07_1_HMD_acceleration.unity
     guid: 13fcff7248076894485ffc766411ffd6
-  m_configObjects: {}
+  m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: c4409f143238f574f98d94af7491b454,
+      type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 78dd856c4cb763540b143b24e1bf6c10,
+      type: 2}
