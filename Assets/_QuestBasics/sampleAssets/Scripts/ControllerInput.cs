@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class ControllerInput : MonoBehaviour
 {
     public TextMesh buttonTouchText;
     public TextMesh buttonDownText;
+    public TextMesh buttonGetText;
     public TextMesh stickValueText;
 
 
@@ -15,6 +16,7 @@ public class ControllerInput : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        CheckGetButton();
         CheckButtonDown();
         CheckButtonTouch();
         CheckStickValue();
@@ -28,6 +30,78 @@ public class ControllerInput : MonoBehaviour
                               + "\n"
                               + OVRInput.Get(OVRInput.RawAxis2D.RThumbstick).ToString();
     }
+
+    private void CheckGetButton()
+    {
+        if (OVRInput.Get(OVRInput.RawButton.A))
+        {
+            //Aボタンを押している間ずっと処理する
+            buttonGetText.text = "A at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.B))
+        {
+            //Bボタンを押している間ずっと処理する
+            buttonGetText.text = "B at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.X))
+        {
+            //Xボタンを押している間ずっと処理する
+            buttonGetText.text = "X at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.Y))
+        {
+            //Yボタンを押している間ずっと処理する
+            buttonGetText.text = "Y at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.RIndexTrigger))
+        {
+            //右人差し指トリガーを押している間ずっと処理する
+            buttonGetText.text = "R_index at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.RHandTrigger))
+        {
+            //右中指トリガーを押している間ずっと処理する
+            buttonGetText.text = "R_hand_trigger at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.LIndexTrigger))
+        {
+            //左人差し指トリガーを押している間ずっと処理する
+            buttonGetText.text = "L_index at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.LHandTrigger))
+        {
+            //左中指トリガーを押している間ずっと処理する
+            buttonGetText.text = "L_hand_trigger at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.LThumbstick))
+        {
+            //左スティックを押している間ずっと処理する
+            buttonGetText.text = "L_StickButton at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.RThumbstick))
+        {
+            //右スティックを押している間ずっと処理する
+            buttonGetText.text = "R_StickButton at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+
+        if (OVRInput.Get(OVRInput.RawButton.Start))
+        {
+            //左のスタートボタンを押している間ずっと処理する
+            buttonGetText.text = "Start Button at " + Time.realtimeSinceStartup.ToString("F1");
+        }
+    }
+
+
+
 
     private void CheckButtonDown()
     {
