@@ -27,6 +27,7 @@ permissions and limitations under the License.
 #endif
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
@@ -43,7 +44,7 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 	public static readonly System.Version wrapperVersion = _versionZero;
 #else
-	public static readonly System.Version wrapperVersion = OVRP_1_64_0.version;
+	public static readonly System.Version wrapperVersion = OVRP_1_66_0.version;
 #endif
 
 #if !OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -159,6 +160,8 @@ public static class OVRPlugin
 	{
 		/// Success
 		Success = 0,
+		Success_EventUnavailable = 1,
+		Success_Pending = 2,
 
 		/// Failure
 		Failure = -1000,
@@ -927,6 +930,7 @@ public static class OVRPlugin
 		NoAllocation = (1 << 5),
 		ProtectedContent = (1 << 6),
 		AndroidSurfaceSwapChain = (1 << 7),
+		BicubicFiltering = (1 << 14),
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -971,7 +975,7 @@ public static class OVRPlugin
 		SrcAlpha = 2,
 		OneMinusSrcAlpha = 3,
 		DstAlpha = 4,
- 		OneMinusDstAlpha = 5
+		OneMinusDstAlpha = 5
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -1059,7 +1063,7 @@ public static class OVRPlugin
 		Max = 5,
 	}
 
-    [Flags]
+	[Flags]
 	public enum HandFingerPinch
 	{
 		Thumb  = (1 << HandFinger.Thumb),
@@ -1297,7 +1301,7 @@ public static class OVRPlugin
 	}
 
 
-  public enum ColorSpace
+	public enum ColorSpace
 	{
 		/// The default value from GetHmdColorSpace until SetClientColorDesc is called. Only valid on PC, and will be remapped to Quest on Mobile
 		Unknown = 0,
@@ -1362,7 +1366,6 @@ public static class OVRPlugin
 		public IntPtr TextureColorMapData;
 	}
 
-/// SceneApi definitions
 
 	public static bool initialized
 	{
@@ -3254,6 +3257,22 @@ public static class OVRPlugin
 #endif
 	}
 
+    public static Result GetInsightPassthroughInitializationState()
+    {
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+        return Result.Failure_Unsupported;
+#else
+        if (version >= OVRP_1_66_0.version)
+        {
+            return OVRP_1_66_0.ovrp_GetInsightPassthroughInitializationState();
+        }
+        else
+        {
+            return Result.Failure_Unsupported;
+        }
+#endif
+    }
+
 	public static bool CreateInsightTriangleMesh(int layerId, Vector3[] vertices, int[] triangles, out ulong meshHandle)
 	{
 		meshHandle = 0;
@@ -4489,6 +4508,8 @@ public static class OVRPlugin
 			StabilizedPoV = 3,
 			RemoteDroneControlled = 4,
 			RemoteSpatialMapped = 5,
+			SpectatorMode = 6,
+			MobileMRC = 7,
 			EnumSize = 0x7fffffff
 		}
 
@@ -5074,7 +5095,31 @@ public static class OVRPlugin
 			}
 #endif
 		}
-
+		
+		public static bool IsCastingToRemoteClient()
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return false;
+#else
+			if (version >= OVRP_1_66_0.version)
+			{
+				Bool isCasting = Bool.False;
+				Result result = OVRP_1_66_0.ovrp_Media_IsCastingToRemoteClient(out isCasting);
+				if (result == Result.Success)
+				{
+					return isCasting == Bool.True;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+#endif
+		}
 	}
 
 	public static bool SetDeveloperMode(Bool active)
@@ -5586,6 +5631,150 @@ public static class OVRPlugin
 #endif
 	}
 
+
+	public class Ktx
+	{
+		public static IntPtr LoadKtxFromMemory(IntPtr dataPtr, uint length)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return IntPtr.Zero;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return IntPtr.Zero;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				IntPtr texture = IntPtr.Zero;
+				OVRP_1_65_0.ovrp_KtxLoadFromMemory(ref dataPtr, length, ref texture);
+				return texture;
+			}
+			return IntPtr.Zero;
+#endif
+		}
+
+		public static uint GetKtxTextureWidth(IntPtr texture)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return 0;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return 0;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				uint width = 0;
+				OVRP_1_65_0.ovrp_KtxTextureWidth(texture, ref width);
+				return width;
+			}
+			return 0;
+#endif
+		}
+
+		public static uint GetKtxTextureHeight(IntPtr texture)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return 0;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return 0;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				uint height = 0;
+				OVRP_1_65_0.ovrp_KtxTextureHeight(texture, ref height);
+				return height;
+			}
+			return 0;
+#endif
+		}
+
+		public static bool TranscodeKtxTexture(IntPtr texture, uint format)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return false;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return false;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				return OVRP_1_65_0.ovrp_KtxTranscode(texture, format) == Result.Success;
+			}
+			return false;
+#endif
+		}
+
+		public static uint GetKtxTextureSize(IntPtr texture)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return 0;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return 0;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				uint size = 0;
+				OVRP_1_65_0.ovrp_KtxTextureSize(texture, ref size);
+				return size;
+			}
+			return 0;
+#endif
+		}
+
+		public static bool GetKtxTextureData(IntPtr texture, IntPtr textureData, uint bufferSize)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return false;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return false;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				return OVRP_1_65_0.ovrp_KtxGetTextureData(texture, textureData, bufferSize) == Result.Success;
+			}
+			return false;
+#endif
+		}
+
+		public static bool DestroyKtxTexture(IntPtr texture)
+		{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+			return false;
+#else
+			if (nativeXrApi != XrApi.OpenXR)
+			{
+				Debug.LogWarning("KTX features are only supported in OpenXR.");
+				return false;
+			}
+
+			if (version >= OVRP_1_65_0.version)
+			{
+				return OVRP_1_65_0.ovrp_KtxDestroy(texture) == Result.Success;
+			}
+			return false;
+#endif
+		}
+	}
 
 	private const string pluginName = "OVRPlugin";
 	private static System.Version _versionZero = new System.Version(0, 0, 0);
@@ -6639,5 +6828,43 @@ public static class OVRPlugin
 
 
 
+	}
+
+	private static class OVRP_1_65_0
+	{
+		public static readonly System.Version version = new System.Version(1, 65, 0);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxLoadFromMemory(ref IntPtr data, uint length, ref System.IntPtr texture);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxTextureWidth(IntPtr texture, ref uint width);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxTextureHeight(IntPtr texture, ref uint height);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxTranscode(IntPtr texture, uint format);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxGetTextureData(IntPtr texture, IntPtr data, uint bufferSize);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxTextureSize(IntPtr texture, ref uint size);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_KtxDestroy(IntPtr texture);
+
+	}
+
+	private static class OVRP_1_66_0
+	{
+		public static readonly System.Version version = new System.Version(1, 66, 0);
+
+        [DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result ovrp_GetInsightPassthroughInitializationState();
+        
+        [DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result ovrp_Media_IsCastingToRemoteClient(out Bool isCasting);
 	}
 }

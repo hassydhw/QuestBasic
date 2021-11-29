@@ -56,7 +56,7 @@ public class OVRGradleGeneration
 	static private System.Guid buildGuid;
 
 #if UNITY_ANDROID
-	private const string prefName = "OVRAutoIncrementVersionCode_Enabled";
+	public const string prefName = "OVRAutoIncrementVersionCode_Enabled";
 	private const string menuItemAutoIncVersion = "Oculus/Tools/Auto Increment Version Code";
 	static bool autoIncrementVersion = false;
 #endif
@@ -76,7 +76,7 @@ public class OVRGradleGeneration
 
 #if UNITY_ANDROID
 	[MenuItem(menuItemAutoIncVersion)]
-	static void ToggleUtilities()
+	public static void ToggleUtilities()
 	{
 		autoIncrementVersion = !autoIncrementVersion;
 		Menu.SetChecked(menuItemAutoIncVersion, autoIncrementVersion);
