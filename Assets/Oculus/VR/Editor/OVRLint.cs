@@ -94,9 +94,11 @@ public class OVRLint : EditorWindow
 	private static List<FixRecord> mRecordsRuntimeAndroid = new List<FixRecord>();
 
 	bool mShowRecordsStaticCommon = false;
-	bool mShowRecordsStaticAndroid = false;
 	bool mShowRecordsRuntimeCommon = false;
+#if UNITY_ANDROID
+	bool mShowRecordsStaticAndroid = false;
 	bool mShowRecordsRuntimeAndroid = false;
+#endif
 
 	private static List<FixRecord> mRuntimeEditModeRequiredRecords = new List<FixRecord>();
 
