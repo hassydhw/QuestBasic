@@ -10,15 +10,18 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 
 ## 使用機器
 * Oculus Quest/Quest2  
-（動作検証に使ったQuestのファームのバージョン　28.0.0.xxxxxxxxxxxxx）
+（動作検証に使ったQuestのファームのバージョン　34.0.0.xxxxxxxxxxxxx）
 
 ## Unityバージョン
 * 2019.4.23.f1  
 2019.4系以降であれば問題なく動くと思います  
 
 ## 使用ライブラリ
-* Oculus Integration version 32.0  
+* Oculus Integration version 34.0  
 <https://developer.oculus.com/downloads/package/unity-integration/>
+
+    アセットストアのリンク  
+<https://assetstore.unity.com/packages/tools/integration/oculus-integration-82022>
 
   プロジェクト内に同梱しています
 
@@ -32,6 +35,12 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 * _05_xx		コントローラーのいろいろな入力を取得  
 * _06_xx		スティックの入力を利用する例  
 * _07_xx		HMD側のセンサーの取得  
+
+
+## 上記サンプルがうまく動かないとき
+Oculus Integrationの中は現在作り変えられており、今後はOpenXRベースのAPIで開発していく、いままでのAPIはLegacyと呼ばれ今後サポート対象外になる、と発表されてます。ただいくつかの機能が、まだOpenXRベースだと不安定だったり、動かなかったりするみたいです。
+上部メニューの Oculus - Tools - OpenXR から、LegacyかOpenXRベースかを切り替えられます、動かない場合はここをLegacyにしてみて下さい。
+
 
 ## 各シーンからランチャーシーンへのもどりかた
 左ステックを押し込んだ状態で、右ステックを押し込むと、ランチャーのシーンに戻ります。
