@@ -19,7 +19,7 @@ MonoBehaviour:
   disableBackups: 1
   enableNSCConfig: 1
   securityXmlPath: 
-  skipUnneededShaders: 0
+  skipUnneededShaders: 1
   focusAware: 1
   requiresSystemKeyboard: 0
   experimentalFeaturesEnabled: 0
