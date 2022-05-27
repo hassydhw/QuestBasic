@@ -20,6 +20,16 @@ namespace Oculus.Voice.Demo.UIShapesDemo
     public class ColorChanger : MonoBehaviour
     {
         /// <summary>
+        /// Sets the color of the specified transform.
+        /// </summary>
+        /// <param name="trans"></param>
+        /// <param name="color"></param>
+        private void SetColor(Transform trans, Color color)
+        {
+            trans.GetComponent<Renderer>().material.color = color;
+        }
+
+        /// <summary>
         /// Directly processes a command result getting the slots with WitResult utilities
         /// </summary>
         /// <param name="commandResult">Result data from Wit.ai activation to be processed</param>
@@ -49,25 +59,25 @@ namespace Oculus.Voice.Demo.UIShapesDemo
         /// <param name="shape">The shape name or if empty all shapes</param>
         public void UpdateColor(string colorName, string shape)
         {
-            if (ColorUtility.TryParseHtmlString(colorName, out var color))
+            if (!ColorUtility.TryParseHtmlString(colorName, out var color)) return;
+
+            if (string.IsNullOrEmpty(shape) || shape == "color")
             {
-                if (string.IsNullOrEmpty(shape) || shape == "color")
+                for (int i = 0; i < transform.childCount; i++)
                 {
-                    for (int i = 0; i < transform.childCount; i++)
-                    {
-                        transform.GetChild(i).GetComponent<Renderer>().material.color = color;
-                    }
+                    SetColor(transform.GetChild(i), color);
                 }
-                else
+            }
+            else
+            {
+                for (int i = 0; i < transform.childCount; i++)
                 {
-                    for (int i = 0; i < transform.childCount; i++)
+                    Transform child = transform.GetChild(i);
+                    if (String.Equals(shape, child.name,
+                        StringComparison.CurrentCultureIgnoreCase))
                     {
-                        Transform child = transform.GetChild(i);
-                        if (String.Equals(shape, child.name,
-                            StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            child.GetComponent<Renderer>().material.color = color;
-                        }
+                        SetColor(child, color);
+                        break;
                     }
                 }
             }

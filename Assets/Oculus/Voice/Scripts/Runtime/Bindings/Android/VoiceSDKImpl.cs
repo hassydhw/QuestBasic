@@ -84,5 +84,10 @@ namespace Oculus.Voice.Bindings.Android
         {
             service.Deactivate();
         }
+
+        public void DeactivateAndAbortRequest()
+        {
+            service.Deactivate();
+        }
     }
 }

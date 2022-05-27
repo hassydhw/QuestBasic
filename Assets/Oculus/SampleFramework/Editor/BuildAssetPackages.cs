@@ -29,6 +29,7 @@ public class BuildAssetPackages
             s.StartsWith("Assets/Oculus/Platform/") ||
             s.StartsWith("Assets/Oculus/Spatializer/") ||
             s.StartsWith("Assets/Oculus/Voice/") ||
+            s.StartsWith("Assets/Oculus/Interaction/") ||
             s.StartsWith("Assets/Oculus/VoiceMod/") ||
             s.StartsWith("Assets/Oculus/VR/") ||
             s.StartsWith("Assets/Oculus/SampleFramework/")

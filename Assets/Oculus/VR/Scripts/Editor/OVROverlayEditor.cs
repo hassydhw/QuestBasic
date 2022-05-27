@@ -1,3 +1,15 @@
+/************************************************************************************
+Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
+
+Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
+https://developer.oculus.com/licenses/oculussdk/
+
+Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ANY KIND, either express or implied. See the License for the specific language governing
+permissions and limitations under the License.
+************************************************************************************/
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -131,13 +143,19 @@ public class OVROverlayEditor : Editor
 		EditorGUILayout.Space();
 
 		EditorGUILayout.LabelField(new GUIContent("Overlay Shape", "The shape of this overlay"), EditorStyles.boldLabel);
-		int currentShapeIndex = Array.IndexOf(selectableShapeValues, overlay.currentOverlayShape);
-		if (currentShapeIndex == -1) {
-			Debug.LogError("Invalid shape encountered");
-			currentShapeIndex = 0;
+		// If the overlay shape has been set to a passthrough shape (via scripting), do not allow to change it.
+		if (!OVROverlay.IsPassthroughShape(overlay.currentOverlayShape))
+		{
+			int currentShapeIndex = Array.IndexOf(selectableShapeValues, overlay.currentOverlayShape);
+			if (currentShapeIndex == -1)
+			{
+				Debug.LogError("Invalid shape encountered");
+				currentShapeIndex = 0;
+			}
+			currentShapeIndex = EditorGUILayout.Popup(new GUIContent("Overlay Shape", "The shape of this overlay"), currentShapeIndex, selectableShapeNames);
+			overlay.currentOverlayShape = selectableShapeValues[currentShapeIndex];
+
 		}
-		currentShapeIndex = EditorGUILayout.Popup(new GUIContent("Overlay Shape", "The shape of this overlay"), currentShapeIndex, selectableShapeNames);
-		overlay.currentOverlayShape = selectableShapeValues[currentShapeIndex];
 
 		EditorGUILayout.Space();
 

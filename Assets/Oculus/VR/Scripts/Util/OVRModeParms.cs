@@ -55,8 +55,8 @@ public class OVRModeParms : MonoBehaviour
 			// NOTE: Reset will cause 1 frame of flicker as it leaves
 			// and re-enters Vr mode.
 			//*************************
-			OVRPlugin.cpuLevel = 0;
-			OVRPlugin.gpuLevel = 1;
+			OVRPlugin.suggestedCpuPerfLevel = OVRPlugin.ProcessorPerformanceLevel.PowerSavings;
+			OVRPlugin.suggestedGpuPerfLevel = OVRPlugin.ProcessorPerformanceLevel.SustainedLow;
 		}
 	}
 

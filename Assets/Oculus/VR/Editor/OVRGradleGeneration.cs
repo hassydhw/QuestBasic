@@ -21,7 +21,7 @@ limitations under the License.
 
 //#define BUILDSESSION
 
-#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#if USING_XR_MANAGEMENT && (USING_XR_SDK_OCULUS || USING_XR_SDK_OPENXR)
 #define USING_XR_SDK
 #endif
 
@@ -39,6 +39,11 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 #if UNITY_ANDROID
 using UnityEditor.Android;
+#endif
+
+#if USING_XR_SDK_OPENXR
+using UnityEngine.XR.OpenXR;
+using UnityEditor.XR.OpenXR.Features;
 #endif
 
 [InitializeOnLoad]
@@ -91,6 +96,48 @@ public class OVRGradleGeneration
 
 	public void OnPreprocessBuild(BuildReport report)
 	{
+		bool useOpenXR = OVRPluginUpdater.IsOVRPluginOpenXRActivated();
+
+#if USING_XR_SDK_OPENXR
+		UnityEngine.Debug.LogWarning("The installation of Unity OpenXR Plugin is detected, which should NOT be used in production when developing Oculus apps for production. Please uninstall the package, and install the Oculus XR Plugin from the Package Manager.");
+
+		// OpenXR Plugin will remove all native plugins if they are not under the Feature folder. Include OVRPlugin to the build if OculusXRFeature is enabled.
+		var oculusXRFeature = FeatureHelpers.GetFeatureWithIdForBuildTarget(report.summary.platformGroup, Oculus.XR.OculusXRFeature.featureId);
+		if (oculusXRFeature.enabled)
+		{
+			if (!useOpenXR)
+			{
+				throw new BuildFailedException("OpenXR backend for Oculus Plugin is disabled, which is required to support Unity OpenXR Plugin. Please enable OpenXR backend for Oculus Plugin through the 'Oculus -> Tools -> OpenXR' menu.");
+			}
+
+			string ovrRootPath = OVRPluginUpdater.GetUtilitiesRootPath();
+			var importers = PluginImporter.GetAllImporters();
+			foreach (var importer in importers)
+			{
+				if (!importer.GetCompatibleWithPlatform(report.summary.platform))
+					continue;
+				string fullAssetPath = Path.Combine(Directory.GetCurrentDirectory(), importer.assetPath);
+#if UNITY_EDITOR_WIN
+				fullAssetPath = fullAssetPath.Replace("/", "\\");
+#endif
+				if (fullAssetPath.StartsWith(ovrRootPath) && fullAssetPath.Contains("OVRPlugin"))
+				{
+					UnityEngine.Debug.LogFormat("[Oculus] Native plugin included in build because of enabled OculusXRFeature: {0}", importer.assetPath);
+					importer.SetIncludeInBuildDelegate(path => true);
+				}
+				if (!fullAssetPath.StartsWith(ovrRootPath) && fullAssetPath.Contains("libopenxr_loader.so"))
+				{
+					UnityEngine.Debug.LogFormat("[Oculus] libopenxr_loader.so from other packages will be disabled because of enabled OculusXRFeature: {0}", importer.assetPath);
+					importer.SetIncludeInBuildDelegate(path => false);
+				}
+			}
+		}
+		else
+		{
+			UnityEngine.Debug.LogWarning("OculusXRFeature is not enabled in OpenXR Settings. Oculus Integration scripts will not be functional.");
+		}
+#endif
+
 #if UNITY_ANDROID && !(USING_XR_SDK && UNITY_2019_3_OR_NEWER)
 		// Generate error when Vulkan is selected as the perferred graphics API, which is not currently supported in Unity XR
 		if (!PlayerSettings.GetUseDefaultGraphicsAPIs(BuildTarget.Android))
@@ -104,7 +151,6 @@ public class OVRGradleGeneration
 #endif
 
 #if UNITY_ANDROID
-		bool useOpenXR = OVRPluginUpdater.IsOVRPluginOpenXRActivated();
 #if USING_XR_SDK
 		if (useOpenXR)
 		{
@@ -132,25 +178,6 @@ public class OVRGradleGeneration
 		buildStartTime = System.DateTime.Now;
 		buildGuid = System.Guid.NewGuid();
 
-		if (OculusBuildApp.GetBuildTelemetryEnabled())
-		{
-			if (!report.summary.outputPath.Contains("OVRGradleTempExport"))
-			{
-				OVRPlugin.SetDeveloperMode(OVRPlugin.Bool.True);
-				OVRPlugin.AddCustomMetadata("build_type", "standard");
-			}
-
-			OVRPlugin.AddCustomMetadata("build_guid", buildGuid.ToString());
-			OVRPlugin.AddCustomMetadata("target_platform", report.summary.platform.ToString());
-#if !UNITY_2019_3_OR_NEWER
-			OVRPlugin.AddCustomMetadata("scripting_runtime_version", UnityEditor.PlayerSettings.scriptingRuntimeVersion.ToString());
-#endif
-			if (report.summary.platform == UnityEditor.BuildTarget.StandaloneWindows
-				|| report.summary.platform == UnityEditor.BuildTarget.StandaloneWindows64)
-			{
-				OVRPlugin.AddCustomMetadata("target_oculus_platform", "rift");
-			}
-		}
 #if BUILDSESSION
 		StreamWriter writer = new StreamWriter("build_session", false);
 		UnityEngine.Debug.LogFormat("Build Session: {0}", buildGuid.ToString());
@@ -168,7 +195,6 @@ public class OVRGradleGeneration
 		{
 			targetOculusPlatform.Add("quest");
 		}
-		OVRPlugin.AddCustomMetadata("target_oculus_platform", String.Join("_", targetOculusPlatform.ToArray()));
 		UnityEngine.Debug.LogFormat("QuestFamily = {0}: Quest = {1}, Quest2 = {2}",
 			OVRDeviceSelector.isTargetDeviceQuestFamily,
 			OVRDeviceSelector.isTargetDeviceQuest,
@@ -290,8 +316,6 @@ public class OVRGradleGeneration
 				|| step.name.Contains("Exporting project")
 				|| step.name.Contains("Building Gradle project"))
 			{
-				OculusBuildApp.SendBuildEvent("build_step_" + step.name.ToLower().Replace(' ', '_'),
-					step.duration.TotalSeconds.ToString(), "ovrbuild");
 #if BUILDSESSION
 				UnityEngine.Debug.LogFormat("build_step_" + step.name.ToLower().Replace(' ', '_') + ": {0}", step.duration.TotalSeconds.ToString());
 #endif
@@ -301,16 +325,9 @@ public class OVRGradleGeneration
 				}
 			}
 		}
-		OVRPlugin.AddCustomMetadata("build_step_count", report.steps.Length.ToString());
-		if (report.summary.outputPath.Contains("apk")) // Exclude Gradle Project Output
-		{
-			var fileInfo = new System.IO.FileInfo(report.summary.outputPath);
-			OVRPlugin.AddCustomMetadata("build_output_size", fileInfo.Length.ToString());
-		}
 #endif
 		if (!report.summary.outputPath.Contains("OVRGradleTempExport"))
 		{
-			OculusBuildApp.SendBuildEvent("build_complete", (System.DateTime.Now - buildStartTime).TotalSeconds.ToString(), "ovrbuild");
 #if BUILDSESSION
 			UnityEngine.Debug.LogFormat("build_complete: {0}", (System.DateTime.Now - buildStartTime).TotalSeconds.ToString());
 #endif
@@ -420,17 +437,6 @@ public class OVRGradleGeneration
 				if (!WaitForProcess)
 				{
 					adbProcess.Kill();
-					float UploadTime = (float)(UploadEnd - UploadStart).TotalMilliseconds / 1000f;
-					float InstallTime = (float)(InstallEnd - UploadEnd).TotalMilliseconds / 1000f;
-
-					if (UploadTime > 0f)
-					{
-						OculusBuildApp.SendBuildEvent("deploy_task", UploadTime.ToString(), "ovrbuild");
-					}
-					if (InstallTime > 0f)
-					{
-						OculusBuildApp.SendBuildEvent("install_task", InstallTime.ToString(), "ovrbuild");
-					}
 				}
 
 				if (!TransferStarted && transferTimeout.ElapsedMilliseconds > 5000)

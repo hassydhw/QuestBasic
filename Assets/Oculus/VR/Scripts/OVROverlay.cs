@@ -60,6 +60,7 @@ public class OVROverlay : MonoBehaviour
 		ReconstructionPassthrough = OVRPlugin.OverlayShape.ReconstructionPassthrough,
 		SurfaceProjectedPassthrough = OVRPlugin.OverlayShape.SurfaceProjectedPassthrough,
 		Fisheye = OVRPlugin.OverlayShape.Fisheye,
+		KeyboardHandsPassthrough = OVRPlugin.OverlayShape.KeyboardHandsPassthrough,
 	}
 
 	/// <summary>
@@ -829,6 +830,7 @@ public class OVROverlay : MonoBehaviour
 	public static bool IsPassthroughShape(OverlayShape shape)
 	{
 		return shape == OverlayShape.ReconstructionPassthrough
+			|| shape == OverlayShape.KeyboardHandsPassthrough
 			|| shape == OverlayShape.SurfaceProjectedPassthrough;
 	}
 
@@ -876,11 +878,18 @@ public class OVROverlay : MonoBehaviour
 
 	void InitOVROverlay()
 	{
-		if (!OVRManager.isHmdPresent)
+#if USING_XR_SDK_OPENXR
+		if (!OVRPlugin.UnityOpenXR.Enabled)
 		{
-			enabled = false;
-			return;
+#endif
+			if (!OVRManager.isHmdPresent)
+			{
+				enabled = false;
+				return;
+			}
+#if USING_XR_SDK_OPENXR
 		}
+#endif
 
 		constructedOverlayXRDevice = OVRManager.XRDevice.Unknown;
 		if (OVRManager.loadedXRDevice == OVRManager.XRDevice.OpenVR)

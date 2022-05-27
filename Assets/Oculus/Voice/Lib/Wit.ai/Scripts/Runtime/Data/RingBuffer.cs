@@ -16,7 +16,7 @@ namespace Facebook.WitAi.Data
 
         public OnDataAdded OnDataAddedEvent;
 
-        private T[] buffer;
+        private readonly T[] buffer;
         private int bufferIndex;
         private long bufferDataLength;
         public int Capacity => buffer.Length;
@@ -30,25 +30,37 @@ namespace Facebook.WitAi.Data
             {
                 for (int i = 0; i < buffer.Length; i++)
                 {
-                    buffer[i] = default(T);
+                    buffer[i] = default;
                 }
             }
         }
 
         public class Marker
         {
-            public long bufferDataIndex;
-            public int index;
-            public RingBuffer<T> buffer;
+            private long bufferDataIndex;
+            private int index;
+            private readonly RingBuffer<T> ringBuffer;
 
-            public bool IsValid => buffer.bufferDataLength - bufferDataIndex < buffer.Capacity;
+            public Marker(RingBuffer<T> ringBuffer, long markerPosition, int bufIndex)
+            {
+                this.ringBuffer = ringBuffer;
+                bufferDataIndex = markerPosition;
+                index = bufIndex;
+            }
 
-            public int Read(T[] buffer, int offset, int length)
+            public bool IsValid => ringBuffer.bufferDataLength - bufferDataIndex <= ringBuffer.Capacity;
+
+            public int Read(T[] buffer, int offset, int length, bool skipToNextValid = false)
             {
                 int read = -1;
+                if (!IsValid && skipToNextValid && ringBuffer.bufferDataLength > ringBuffer.Capacity)
+                {
+                    bufferDataIndex = ringBuffer.bufferDataLength - ringBuffer.Capacity;
+                }
+
                 if (IsValid)
                 {
-                    read = this.buffer.Read(buffer, offset, length, bufferDataIndex);
+                    read = this.ringBuffer.Read(buffer, offset, length, bufferDataIndex);
                     bufferDataIndex += read;
                     index += read;
                     if (index > buffer.Length) index -= buffer.Length;
@@ -129,6 +141,11 @@ namespace Facebook.WitAi.Data
 
         public int Read(T[] data, int offset, int length, long bufferDataIndex)
         {
+            if (bufferIndex == 0 && bufferDataLength == 0) // The ring buffer has been cleared.
+            {
+                return 0;
+            }
+
             lock (buffer)
             {
                 int read = (int) (Math.Min(bufferDataIndex + length, bufferDataLength) -
@@ -154,8 +171,6 @@ namespace Facebook.WitAi.Data
                 markerPosition = 0;
             }
 
-            Debug.Log("Creating marker at " + bufferDataLength + " offset to " + markerPosition);
-
             int bufIndex = bufferIndex + offset;
             if (bufIndex < 0)
             {
@@ -164,15 +179,11 @@ namespace Facebook.WitAi.Data
 
             if (bufIndex > buffer.Length)
             {
-                bufIndex = bufIndex - buffer.Length;
+                bufIndex -= buffer.Length;
             }
 
-            var marker = new Marker()
-            {
-                buffer = this,
-                bufferDataIndex = markerPosition,
-                index = bufIndex
-            };
+            var marker = new Marker(this, markerPosition, bufIndex);
+
             return marker;
         }
     }

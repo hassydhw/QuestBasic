@@ -6,6 +6,7 @@
  */
 
 using System;
+using Facebook.WitAi.Configuration;
 using Facebook.WitAi.Data.Entities;
 using Facebook.WitAi.Data.Intents;
 using Facebook.WitAi.Data.Traits;
@@ -23,14 +24,28 @@ namespace Facebook.WitAi.Data.Configuration
         [SerializeField] public WitApplication application;
         [HideInInspector] [SerializeField] public string configId;
 
+        /// <summary>
+        /// Access token used in builds to make requests for data from Wit.ai
+        /// </summary>
+        [Tooltip("Access token used in builds to make requests for data from Wit.ai")]
         [SerializeField] public string clientAccessToken;
+
+        [Tooltip("The number of milliseconds to wait before requests to Wit.ai will timeout")]
+        [SerializeField] public int timeoutMS = 10000;
+
+        /// <summary>
+        /// Configuration parameters to set up a custom endpoint for testing purposes and request forwarding. The default values here will work for most.
+        /// </summary>
+        [Tooltip("Configuration parameters to set up a custom endpoint for testing purposes and request forwarding. The default values here will work for most.")]
+        [SerializeField] public WitEndpointConfig endpointConfiguration = new WitEndpointConfig();
 
         [SerializeField] public WitEntity[] entities;
         [SerializeField] public WitIntent[] intents;
         [SerializeField] public WitTrait[] traits;
 
-        public WitApplication Application => application;
+        [HideInInspector] [SerializeField] public bool isDemoOnly;
 
+        public WitApplication Application => application;
         private void OnEnable()
         {
             #if UNITY_EDITOR
