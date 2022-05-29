@@ -10,14 +10,14 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 
 ## 使用機器
 * Oculus Quest/Quest2  
-（動作検証に使ったQuestのファームのバージョン　34.0.0.xxxxxxxxxxxxx）
+（動作検証に使ったQuestのバージョン　39.0.0.88.xxxxxxxxxxxxx）
 
 ## Unityバージョン
-* 2019.4.23.f1  
-2019.4系以降であれば問題なく動くと思います  
+* 2020.3.13.f1  
+2020..3系以降であれば問題なく動くと思います  
 
 ## 使用ライブラリ
-* Oculus Integration version 34.0  
+* Oculus Integration version 39.0  
 <https://developer.oculus.com/downloads/package/unity-integration/>
 
     アセットストアのリンク  
