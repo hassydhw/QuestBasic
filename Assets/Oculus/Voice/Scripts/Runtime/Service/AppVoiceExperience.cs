@@ -45,7 +45,7 @@ namespace Oculus.Voice
 
         }
         public override bool MicActive => null != voiceServiceImpl && voiceServiceImpl.MicActive;
-        public override bool ShouldSendMicData => witRuntimeConfiguration.sendAudioToWit ||
+        protected override bool ShouldSendMicData => witRuntimeConfiguration.sendAudioToWit ||
                                                   null == TranscriptionProvider;
         #endregion
 
@@ -76,6 +76,11 @@ namespace Oculus.Voice
         public override void Deactivate()
         {
             voiceServiceImpl.Deactivate();
+        }
+
+        public override void DeactivateAndAbortRequest()
+        {
+            voiceServiceImpl.DeactivateAndAbortRequest();
         }
 
         public override void Activate(string text)

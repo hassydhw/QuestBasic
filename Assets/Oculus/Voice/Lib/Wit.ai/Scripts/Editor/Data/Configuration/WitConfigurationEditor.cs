@@ -8,497 +8,307 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Facebook.WitAi.Data.Entities;
-using Facebook.WitAi.Data.Intents;
-using Facebook.WitAi.Data.Traits;
-using Facebook.WitAi.Utilities;
+using Facebook.WitAi.Configuration;
+using Facebook.WitAi.Data.Configuration;
 using UnityEditor;
 using UnityEngine;
 
-namespace Facebook.WitAi.Data.Configuration
+namespace Facebook.WitAi.Windows
 {
     public class WitConfigurationEditor : Editor
     {
-        public IApplicationDetailProvider appDrawer = new WitApplicationDetailProvider();
-
-        private WitConfiguration configuration;
-
-        private Dictionary<string, bool> foldouts = new Dictionary<string, bool>();
-
-        private int selectedToolPanel;
-
-        private readonly string[] toolPanelNames = new[]
-        {
-            "Application",
-            "Intents",
-            "Entities",
-            "Traits"
-        };
-
-        private readonly string[] toolPanelNamesOnlyAppInfo = new[]
-        {
-            "Application"
-        };
-
-        private readonly string[] toolPanelNamesWithoutAppInfo = new[]
-        {
-            "Intents",
-            "Entities",
-            "Traits"
-        };
-
-        private const int TOOL_PANEL_APP = 0;
-        private const int TOOL_PANEL_INTENTS = 1;
-        private const int TOOL_PANEL_ENTITIES = 2;
-        private const int TOOL_PANEL_TRAITS = 3;
-
-        private Editor applicationEditor;
-        private Vector2 scroll;
-        private bool appConfigurationFoldout;
+        public WitConfiguration configuration { get; private set; }
+        private string serverToken;
         private bool initialized = false;
         public bool drawHeader = true;
-        private string currentToken;
+        private bool foldout = true;
+        private int requestTab = -1;
 
-        private bool IsTokenValid => !string.IsNullOrEmpty(configuration.clientAccessToken) &&
-                                     configuration.clientAccessToken.Length == 32;
+        // Tab IDs
+        protected const string TAB_APPLICATION_ID = "application";
+        protected const string TAB_INTENTS_ID = "intents";
+        protected const string TAB_ENTITIES_ID = "entities";
+        protected const string TAB_TRAITS_ID = "traits";
+        private string[] _tabIds = new string[] { TAB_APPLICATION_ID, TAB_INTENTS_ID, TAB_ENTITIES_ID, TAB_TRAITS_ID };
+
+        public virtual Texture2D HeaderIcon => WitStyles.HeaderIcon;
+        public virtual string HeaderUrl => WitStyles.GetAppURL(WitConfigurationUtility.GetAppID(configuration), WitStyles.WitAppEndpointType.Settings);
+        public virtual string OpenButtonLabel => WitStyles.Texts.WitOpenButtonLabel;
 
         public void Initialize()
         {
-        WitAuthUtility.InitEditorTokens();
-        configuration = target as WitConfiguration;
-        currentToken = WitAuthUtility.GetAppServerToken(configuration);
-        if (WitAuthUtility.IsServerTokenValid(currentToken) && !string.IsNullOrEmpty(configuration?.clientAccessToken))
+            // Refresh configuration & auth tokens
+            configuration = target as WitConfiguration;
+            // Get app server token
+            serverToken = WitAuthUtility.GetAppServerToken(configuration);
+            if (CanConfigurationRefresh(configuration) && WitConfigurationUtility.IsServerTokenValid(serverToken))
             {
-                configuration?.UpdateData(() =>
+                // Get client token if needed
+                string appID = WitConfigurationUtility.GetAppID(configuration);
+                if (string.IsNullOrEmpty(appID))
                 {
-                    EditorForegroundRunner.Run(() => EditorUtility.SetDirty(configuration));
-                });
+                    configuration.SetServerToken(serverToken);
+                }
+                // Refresh additional data
+                else
+                {
+                    SafeRefresh();
+                }
             }
         }
 
         public override void OnInspectorGUI()
         {
+            // Init styles
+            WitStyles.Init();
+            // Init if needed
             if (!initialized || configuration != target)
             {
                 Initialize();
                 initialized = true;
             }
 
+            // Draw header
             if (drawHeader)
             {
-                string link = null;
-                if (configuration && null != configuration.application &&
-                    !string.IsNullOrEmpty(configuration.application.id))
-                {
-                    link = $"https://wit.ai/apps/{configuration.application.id}/settings";
-                }
-
-                BaseWitWindow.DrawHeader(headerLink: link);
+                WitEditorUI.LayoutHeaderButton(HeaderIcon, HeaderUrl);
+                GUILayout.Space(WitStyles.HeaderPaddingBottom);
+                EditorGUI.indentLevel++;
             }
 
+            // Layout content
+            LayoutContent();
+
+            // Undent
+            if (drawHeader)
+            {
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        protected virtual void LayoutContent()
+        {
+            // Begin vertical box
             GUILayout.BeginVertical(EditorStyles.helpBox);
 
+            // Title Foldout
             GUILayout.BeginHorizontal();
-            appConfigurationFoldout = EditorGUILayout.Foldout(appConfigurationFoldout,
-                "Application Configuration");
-            if (!string.IsNullOrEmpty(configuration?.application?.name))
+            string foldoutText = WitStyles.Texts.ConfigurationHeaderLabel;
+            string appName = configuration?.application?.name;
+            if (!string.IsNullOrEmpty(appName))
             {
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(configuration?.application?.name);
+                foldoutText = foldoutText + " - " + appName;
             }
-
-            GUILayout.EndHorizontal();
-
-            bool hasApplicationInfo = configuration && null != configuration.application;
-
-            if (appConfigurationFoldout || !IsTokenValid)
+            foldout = WitEditorUI.LayoutFoldout(new GUIContent(foldoutText), foldout);
+            // Refresh button
+            if (CanConfigurationRefresh(configuration))
             {
-                GUILayout.BeginHorizontal();
-                var token = EditorGUILayout.PasswordField("Server Access Token", currentToken);
-                if (token != currentToken)
+                if (string.IsNullOrEmpty(appName))
                 {
-                    currentToken = token;
-                    ApplyToken(token);
+                    bool isValid =  WitConfigurationUtility.IsServerTokenValid(serverToken);
+                    GUI.enabled = isValid;
+                    if (WitEditorUI.LayoutTextButton(WitStyles.Texts.ConfigurationRefreshButtonLabel))
+                    {
+                        ApplyServerToken(serverToken);
+                    }
+                }
+                else
+                {
+                    bool isRefreshing = configuration.IsRefreshingData();
+                    GUI.enabled = !isRefreshing;
+                    if (WitEditorUI.LayoutTextButton(isRefreshing ? WitStyles.Texts.ConfigurationRefreshingButtonLabel : WitStyles.Texts.ConfigurationRefreshButtonLabel))
+                    {
+                        SafeRefresh();
+                    }
+                }
+            }
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+            GUILayout.Space(WitStyles.ButtonMargin);
+
+            // Show configuration app data
+            if (foldout)
+            {
+                // Indent
+                EditorGUI.indentLevel++;
+
+                // Server access token
+                bool updated = false;
+                WitEditorUI.LayoutPasswordField(WitStyles.ConfigurationServerTokenContent, ref serverToken, ref updated);
+                if (updated)
+                {
+                    ApplyServerToken(serverToken);
                 }
 
-                if (configuration && GUILayout.Button("Refresh", GUILayout.Width(75)))
-                {
-                    ApplyToken(currentToken);
-                }
-
-                if (GUILayout.Button(WitStyles.PasteIcon, WitStyles.ImageIcon))
-                {
-                    currentToken = EditorGUIUtility.systemCopyBuffer;
-                    ApplyToken(currentToken);
-                }
-
-                GUILayout.EndHorizontal();
-
+                // Additional data
                 if (configuration)
                 {
-                    var clientToken =
-                        EditorGUILayout.PasswordField("Client Access Token",
-                            configuration.clientAccessToken);
-                    if (clientToken != configuration.clientAccessToken)
-                    {
-                        configuration.clientAccessToken = clientToken;
-                        EditorUtility.SetDirty(configuration);
-                    }
+                    LayoutConfigurationData();
                 }
+
+                // Undent
+                EditorGUI.indentLevel--;
             }
+
+            // End vertical box layout
             GUILayout.EndVertical();
 
-            if (hasApplicationInfo)
-            {
-                if (configuration.application.id != null && !configuration.application.id.StartsWith("voice"))
-                {
-                    selectedToolPanel = GUILayout.Toolbar(selectedToolPanel, toolPanelNames);
-                }
-                else
-                {
-                    selectedToolPanel = GUILayout.Toolbar(selectedToolPanel, toolPanelNamesOnlyAppInfo);
-                }
-            }
-            else
-            {
-                selectedToolPanel = GUILayout.Toolbar(selectedToolPanel, toolPanelNamesWithoutAppInfo);
-            }
+            // Layout configuration request tabs
+            LayoutConfigurationRequestTabs();
 
-            scroll = GUILayout.BeginScrollView(scroll);
-            switch (hasApplicationInfo ? selectedToolPanel : selectedToolPanel + 1)
+            // Additional open wit button
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(OpenButtonLabel, WitStyles.TextButton))
             {
-                case TOOL_PANEL_APP:
-                    DrawApplication(configuration.application);
-                    break;
-                case TOOL_PANEL_INTENTS:
-                    DrawIntents();
-                    break;
-                case TOOL_PANEL_ENTITIES:
-                    DrawEntities();
-                    break;
-                case TOOL_PANEL_TRAITS:
-                    DrawTraits();
-                    break;
-            }
-
-            GUILayout.EndScrollView();
-
-            if (GUILayout.Button("Open Wit.ai"))
-            {
-                if (!string.IsNullOrEmpty(configuration.application?.id))
-                {
-                    Application.OpenURL($"https://wit.ai/apps/{configuration.application.id}");
-                }
-                else
-                {
-                    Application.OpenURL("https://wit.ai");
-                }
+                Application.OpenURL(HeaderUrl);
             }
         }
-
-        private void ApplyToken(string token)
+        // Apply server token
+        public void ApplyServerToken(string newToken)
         {
-            if (!string.IsNullOrEmpty(token) && WitAuthUtility.IsServerTokenValid(token))
-            {
-                RefreshAppData(WitAuthUtility.GetAppId(token),  token);
-            }
+            serverToken = newToken;
+            configuration.SetServerToken(serverToken);
         }
-
-        private void RefreshAppData(string appId, string token = "")
+        // Whether or not to allow a configuration to refresh
+        protected virtual bool CanConfigurationRefresh(WitConfiguration configuration)
         {
-            var refreshToken = WitAuthUtility.GetAppServerToken(appId, token);
-            if (string.IsNullOrEmpty(refreshToken) &&
-                string.IsNullOrEmpty(appId) &&
-                !string.IsNullOrEmpty(configuration?.application?.id))
+            return configuration;
+        }
+        // Layout configuration data
+        protected virtual void LayoutConfigurationData()
+        {
+            // Reset update
+            bool updated = false;
+            // Client access field
+            WitEditorUI.LayoutPasswordField(WitStyles.ConfigurationClientTokenContent, ref configuration.clientAccessToken, ref updated);
+            if (updated && string.IsNullOrEmpty(configuration.clientAccessToken))
             {
-                refreshToken = WitAuthUtility.GetAppServerToken(configuration.application.id,
-                    WitAuthUtility.ServerToken);
-                appId = WitAuthUtility.GetAppId(refreshToken);
-                if (string.IsNullOrEmpty(appId))
+                Debug.LogError("Client access token is not defined. Cannot perform requests with '" + configuration.name + "'.");
+            }
+            // Timeout field
+            WitEditorUI.LayoutIntField(WitStyles.ConfigurationRequestTimeoutContent, ref configuration.timeoutMS, ref updated);
+            // Updated
+            if (updated)
+            {
+                EditorUtility.SetDirty(configuration);
+            }
+
+            // Show configuration app data
+            LayoutConfigurationEndpoint();
+        }
+        // Layout endpoint data
+        protected virtual void LayoutConfigurationEndpoint()
+        {
+            // Generate if needed
+            if (configuration.endpointConfiguration == null)
+            {
+                configuration.endpointConfiguration = new WitEndpointConfig();
+                EditorUtility.SetDirty(configuration);
+            }
+
+            // Handle via serialized object
+            var serializedObj = new SerializedObject(configuration);
+            var serializedProp = serializedObj.FindProperty("endpointConfiguration");
+            EditorGUILayout.PropertyField(serializedProp);
+            serializedObj.ApplyModifiedProperties();
+        }
+        // Tabs
+        protected virtual void LayoutConfigurationRequestTabs()
+        {
+            // Indent
+            EditorGUI.indentLevel++;
+
+            // Iterate tabs
+            if (_tabIds != null)
+            {
+                GUILayout.BeginHorizontal();
+                for (int i = 0; i < _tabIds.Length; i++)
                 {
-                    UpdateTokenData(refreshToken, () =>
+                    // Enable if not selected
+                    GUI.enabled = requestTab != i;
+                    // If valid and clicked, begin selecting
+                    string tabPropertyID = _tabIds[i];
+                    if (ShouldTabShow(configuration, tabPropertyID))
                     {
-                        appId = WitAuthUtility.GetAppId(refreshToken);
-                        if (appId == configuration.application.id)
+                        if (WitEditorUI.LayoutTabButton(GetTabText(configuration, tabPropertyID, true)))
                         {
-                            configuration.FetchAppConfigFromServerToken(refreshToken, () =>
-                            {
-                                currentToken = refreshToken;
-                                WitAuthUtility.SetAppServerToken(configuration.application.id, currentToken);
-                                EditorUtility.SetDirty(configuration);
-                                EditorForegroundRunner.Run(Repaint);
-                                appConfigurationFoldout = false;
-                            });
-                        }
-                    });
-                    return;
-                }
-
-                if (appId == configuration.application.id)
-                {
-                    refreshToken = WitAuthUtility.ServerToken;
-                }
-            }
-
-            if (currentToken != refreshToken)
-            {
-                currentToken = refreshToken;
-            }
-
-            configuration.FetchAppConfigFromServerToken(refreshToken, () =>
-            {
-                currentToken = refreshToken;
-                EditorForegroundRunner.Run(Repaint);
-                appConfigurationFoldout = false;
-            });
-        }
-
-        public static void UpdateTokenData(string serverToken, Action updateComplete = null)
-        {
-            if (!WitAuthUtility.IsServerTokenValid(serverToken)) return;
-
-            var listRequest = WitRequestFactory.ListAppsRequest(serverToken, 10000);
-            listRequest.onResponse = (r) =>
-            {
-                if (r.StatusCode == 200)
-                {
-                    var applications = r.ResponseData.AsArray;
-                    for (int i = 0; i < applications.Count; i++)
-                    {
-                        if (applications[i]["is_app_for_token"].AsBool)
-                        {
-                            var application = WitApplication.FromJson(applications[i]);
-                            EditorForegroundRunner.Run(() =>
-                            {
-                                WitAuthUtility.SetAppServerToken(application.id, serverToken);
-                                updateComplete?.Invoke();
-                            });
-                            break;
+                            requestTab = i;
                         }
                     }
+                    // If invalid, stop selecting
+                    else if (requestTab == i)
+                    {
+                        requestTab = -1;
+                    }
+                }
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+            }
+
+            // Layout selected tab using property id
+            string propertyID = requestTab >= 0 && requestTab < _tabIds.Length ? _tabIds[requestTab] : string.Empty;
+            if (!string.IsNullOrEmpty(propertyID))
+            {
+                SerializedObject serializedObj = new SerializedObject(configuration);
+                SerializedProperty serializedProp = serializedObj.FindProperty(propertyID);
+                if (serializedProp == null)
+                {
+                    WitEditorUI.LayoutErrorLabel(GetTabText(configuration, propertyID, false));
+                }
+                else if (!serializedProp.isArray)
+                {
+                    EditorGUILayout.PropertyField(serializedProp);
+                }
+                else if (serializedProp.arraySize == 0)
+                {
+                    WitEditorUI.LayoutErrorLabel(GetTabText(configuration, propertyID, false));
                 }
                 else
                 {
-                    Debug.LogError(r.StatusDescription);
-                }
-            };
-            listRequest.Request();
-        }
-
-        private void DrawTraits()
-        {
-            var traits = configuration.traits;
-            if (null != traits)
-            {
-                var n = traits.Length;
-                if (n == 0)
-                {
-                    GUILayout.Label("No traits available.");
-                }
-                else
-                {
-                    BeginIndent();
-                    for (int i = 0; i < n; i++)
+                    for (int i = 0; i < serializedProp.arraySize; i++)
                     {
-                        var trait = traits[i];
-                        if (null != trait && Foldout("t:", trait.name))
-                        {
-                            DrawTrait(trait);
-                        }
-                    }
-
-                    EndIndent();
-                }
-            }
-            else
-            {
-                GUILayout.Label("Traits have not been loaded yet.", EditorStyles.helpBox);
-            }
-        }
-
-        private void DrawTrait(WitTrait trait)
-        {
-            InfoField("ID", trait.id);
-            InfoField("Name", trait.name);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Values", GUILayout.Width(100));
-            GUILayout.EndHorizontal();
-            var values = trait.values;
-            var n = values.Length;
-            if (n == 0)
-            {
-                GUILayout.Label("No values available.");
-            }
-            else
-            {
-                BeginIndent();
-                for (int i = 0; i < n; i++)
-                {
-                    var value = values[i];
-                    if (null != value && Foldout("v:", value.value))
-                    {
-                        DrawTraitValue(value);
+                        SerializedProperty serializedPropChild = serializedProp.GetArrayElementAtIndex(i);
+                        EditorGUILayout.PropertyField(serializedPropChild);
                     }
                 }
-
-                EndIndent();
+                serializedObj.ApplyModifiedProperties();
             }
-        }
 
-        private void DrawTraitValue(WitTraitValue traitValue)
-        {
-            InfoField("ID", traitValue.id);
-            InfoField("Value", traitValue.value);
+            // Undent
+            EditorGUI.indentLevel--;
         }
-
-        private void DrawEntities()
+        // Determine if tab should show
+        protected virtual bool ShouldTabShow(WitConfiguration configuration, string tabID)
         {
-            var entities = configuration.entities;
-            if (null != entities)
+            return true;
+        }
+        // Get tab text
+        protected virtual string GetTabText(WitConfiguration configuration, string tabID, bool titleLabel)
+        {
+            switch (tabID)
             {
-                var n = entities.Length;
-                if (n == 0)
-                {
-                    GUILayout.Label("No entities available.");
-                }
-                else
-                {
-                    BeginIndent();
-                    for (int i = 0; i < n; i++)
-                    {
-                        var entity = entities[i];
-                        if (null != entity && Foldout("e:", entity.name))
-                        {
-                            DrawEntity(entity);
-                        }
-                    }
-
-                    EndIndent();
-                }
+                case TAB_APPLICATION_ID:
+                    return titleLabel ? WitStyles.Texts.ConfigurationApplicationTabLabel : WitStyles.Texts.ConfigurationApplicationMissingLabel;
+                case TAB_INTENTS_ID:
+                    return titleLabel ? WitStyles.Texts.ConfigurationIntentsTabLabel : WitStyles.Texts.ConfigurationIntentsMissingLabel;
+                case TAB_ENTITIES_ID:
+                    return titleLabel ? WitStyles.Texts.ConfigurationEntitiesTabLabel : WitStyles.Texts.ConfigurationEntitiesMissingLabel;
+                case TAB_TRAITS_ID:
+                    return titleLabel ? WitStyles.Texts.ConfigurationTraitsTabLabel : WitStyles.Texts.ConfigurationTraitsMissingLabel;
             }
-            else
+            return string.Empty;
+        }
+        // Safe refresh
+        protected virtual void SafeRefresh()
+        {
+            if (WitConfigurationUtility.IsServerTokenValid(serverToken))
             {
-                GUILayout.Label("Entities have not been loaded yet.", EditorStyles.helpBox);
+                configuration.SetServerToken(serverToken);
             }
-        }
-
-        private void DrawApplication(WitApplication application)
-        {
-            appDrawer.DrawApplication(application);
-        }
-
-        private void DrawEntity(WitEntity entity)
-        {
-            InfoField("ID", entity.id);
-            if (null != entity.roles && entity.roles.Length > 0)
+            else if (WitConfigurationUtility.IsClientTokenValid(configuration.clientAccessToken))
             {
-                EditorGUILayout.Popup("Roles", 0, entity.roles);
+                configuration.RefreshData();
             }
-
-            if (null != entity.lookups && entity.lookups.Length > 0)
-            {
-                EditorGUILayout.Popup("Lookups", 0, entity.lookups);
-            }
-        }
-
-        private void DrawIntents()
-        {
-            var intents = configuration.intents;
-            if (null != intents)
-            {
-                var n = intents.Length;
-                if (n == 0)
-                {
-                    GUILayout.Label("No intents available.");
-                }
-                else
-                {
-                    BeginIndent();
-                    for (int i = 0; i < n; i++)
-                    {
-                        var intent = intents[i];
-                        if (null != intent && Foldout("i:", intent.name))
-                        {
-                            DrawIntent(intent);
-                        }
-                    }
-
-                    EndIndent();
-                }
-            }
-            else
-            {
-                GUILayout.Label("Intents have not been loaded yet.", EditorStyles.helpBox);
-            }
-        }
-
-        private void DrawIntent(WitIntent intent)
-        {
-            InfoField("ID", intent.id);
-            var entities = intent.entities;
-            if (entities.Length > 0)
-            {
-                var entityNames = entities.Select(e => e.name).ToArray();
-                EditorGUILayout.Popup("Entities", 0, entityNames);
-            }
-        }
-
-        #region UI Components
-
-        private void BeginIndent()
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(10);
-            GUILayout.BeginVertical();
-        }
-
-        private void EndIndent()
-        {
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
-        }
-
-        private void InfoField(string name, string value)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(name, GUILayout.Width(100));
-            GUILayout.Label(value, "TextField");
-            GUILayout.EndHorizontal();
-        }
-
-        private bool Foldout(string keybase, string name)
-        {
-            string key = keybase + name;
-            bool show = false;
-            if (!foldouts.TryGetValue(key, out show))
-            {
-                foldouts[key] = false;
-            }
-
-            show = EditorGUILayout.Foldout(show, name, true);
-            foldouts[key] = show;
-            return show;
-        }
-
-        #endregion
-
-        public static WitConfiguration CreateWitConfiguration(string serverToken, Action onCreationComplete)
-        {
-            var path = EditorUtility.SaveFilePanel("Create Wit Configuration", Application.dataPath,
-                "WitConfiguration", "asset");
-            if (!string.IsNullOrEmpty(path) && path.StartsWith(Application.dataPath))
-            {
-                WitConfiguration asset = ScriptableObject.CreateInstance<WitConfiguration>();
-
-                asset.FetchAppConfigFromServerToken(serverToken, onCreationComplete);
-
-                path = path.Substring(Application.dataPath.Length - 6);
-                AssetDatabase.CreateAsset(asset, path);
-                AssetDatabase.SaveAssets();
-                return asset;
-            }
-
-            return null;
         }
     }
 }

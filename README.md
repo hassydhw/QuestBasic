@@ -10,20 +10,20 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
 
 ## 使用機器
 * Oculus Quest/Quest2  
-（動作検証に使ったQuestのファームのバージョン　34.0.0.xxxxxxxxxxxxx）
+（動作検証に使ったQuestのバージョン　39.0.0.88.xxxxxxxxxxxxx）
 
 ## Unityバージョン
-* 2019.4.23.f1  
-2019.4系以降であれば問題なく動くと思います  
+* 2020.3.13.f1  
+2020..3系以降であれば問題なく動くと思います  
 
 ## 使用ライブラリ
-* Oculus Integration version 34.0  
+* Oculus Integration version 39.0  
 <https://developer.oculus.com/downloads/package/unity-integration/>
 
     アセットストアのリンク  
 <https://assetstore.unity.com/packages/tools/integration/oculus-integration-82022>
 
-  プロジェクト内に同梱しています
+  プロジェクト内に同梱しておりません、上記リンクから追加して下さい。
 
 ## 各シーンの概要
 各シーンそれぞれ一つの機能しかないため理解しやすいと思います 
@@ -50,5 +50,3 @@ Oculus Integrationの中は現在作り変えられており、今後はOpenXR�
 * Githubからクローンする場合  
 git clone https://github.com/hassydhw/OculusGoBasics.git
 
-## ビルド時にエラーが出る場合
-Oculusフォルダを削除し（Oculus Integrationがはいっているフォルダ）、アセットストアから、Oculus Ingegrationをダウンロードして取り込みなおしてみてください。

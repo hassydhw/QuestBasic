@@ -14,5 +14,6 @@ public class QB_ConfigSettings : MonoBehaviour
     //    public static string versionNumber = "1.25.0"; //20210401 新年度に向けてSDK更新　＆　アップデート
     //public static string versionNumber = "1.28.0"; //20210430 対応SDK更新、ランチャー機能追加
     // public static string versionNumber = "1.32.0"; //20210905 対応SDKを32.0に更新
-    public static string versionNumber = "1.34.0"; //20211130 対応SDKを34.0に更新
+//    public static string versionNumber = "1.34.0"; //20211130 対応SDKを34.0に更新
+    public static string versionNumber = "1.39.0"; //20220530 対応SDKを39.0に更新
 }

@@ -21,11 +21,10 @@ public class OVRManagerEditor : Editor
 	override public void OnInspectorGUI()
 	{
 		OVRRuntimeSettings runtimeSettings = OVRRuntimeSettings.GetRuntimeSettings();
+		OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
 
 #if UNITY_ANDROID
-		OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
 		OVRProjectConfigEditor.DrawTargetDeviceInspector(projectConfig);
-
 		EditorGUILayout.Space();
 #endif
 
@@ -52,10 +51,10 @@ public class OVRManagerEditor : Editor
 		}
 #endif
 
-#if UNITY_ANDROID
 		EditorGUILayout.Space();
         OVRProjectConfigEditor.DrawProjectConfigInspector(projectConfig);
 
+#if UNITY_ANDROID
 		EditorGUILayout.Space();
 		EditorGUILayout.LabelField("Mixed Reality Capture for Quest", EditorStyles.boldLabel);
 		EditorGUI.indentLevel++;
@@ -157,7 +156,7 @@ public class OVRManagerEditor : Editor
 		EditorGUILayout.LabelField("Insight Passthrough", EditorStyles.boldLabel);
 #if UNITY_ANDROID
 		if (!passthroughCapabilityEnabled) {
-			EditorGUILayout.LabelField("Requires Experimental Features and Passthrough Capability to be enabled in the Experimental section.", EditorStyles.wordWrappedLabel);
+			EditorGUILayout.LabelField("Requires Passthrough Capability to be enabled in the General section of the Quest features.", EditorStyles.wordWrappedLabel);
 		}
 #endif
 		OVREditorUtil.SetupBoolField(target, enablePassthroughContent, ref manager.isInsightPassthroughEnabled, ref modified);

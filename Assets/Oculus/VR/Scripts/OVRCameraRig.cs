@@ -10,7 +10,7 @@ ANY KIND, either express or implied. See the License for the specific language g
 permissions and limitations under the License.
 ************************************************************************************/
 
-#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#if USING_XR_MANAGEMENT && (USING_XR_SDK_OCULUS || USING_XR_SDK_OPENXR)
 #define USING_XR_SDK
 #endif
 
@@ -18,7 +18,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.XR;
 using Node = UnityEngine.XR.XRNode;
 
 /// <summary>
@@ -263,6 +263,20 @@ public class OVRCameraRig : MonoBehaviour
 			leftControllerAnchor.localRotation = leftOffsetPose.orientation;
 		}
 
+#if USING_XR_SDK
+#if UNITY_2020_3_OR_NEWER
+		if (OVRManager.instance.LateLatching)
+		{
+			XRDisplaySubsystem displaySubsystem = OVRManager.GetCurrentDisplaySubsystem();
+			if (displaySubsystem != null)
+			{
+				displaySubsystem.MarkTransformLateLatched(centerEyeAnchor.transform, XRDisplaySubsystem.LateLatchNode.Head);
+				displaySubsystem.MarkTransformLateLatched(leftHandAnchor, XRDisplaySubsystem.LateLatchNode.LeftHand);
+				displaySubsystem.MarkTransformLateLatched(rightHandAnchor, XRDisplaySubsystem.LateLatchNode.RightHand);
+			}
+		}
+#endif
+#endif
 		RaiseUpdatedAnchorsEvent();
 	}
 

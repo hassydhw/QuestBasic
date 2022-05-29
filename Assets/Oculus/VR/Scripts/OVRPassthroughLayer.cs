@@ -1,3 +1,15 @@
+/************************************************************************************
+Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
+
+Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
+https://developer.oculus.com/licenses/oculussdk/
+
+Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ANY KIND, either express or implied. See the License for the specific language governing
+permissions and limitations under the License.
+************************************************************************************/
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -5,44 +17,73 @@ using UnityEngine;
 
 using ColorMapType = OVRPlugin.InsightPassthroughColorMapType;
 
-
+/// <summary>
+/// A layer used for passthrough.
+/// </summary>
 public class OVRPassthroughLayer : MonoBehaviour
 {
 	#region Public Interface
 
+	/// <summary>
+	/// The passthrough projection surface type: reconstructed | user defined.
+	/// </summary>
 	public enum ProjectionSurfaceType
 	{
-		Reconstructed,
-		UserDefined
+		Reconstructed, ///< Reconstructed surface type will render passthrough using automatic environment depth reconstruction
+		UserDefined ///< UserDefined allows you to define a surface
 	}
 
-	// The type of the surface which passthrough textures are projected on: automatic reconstruction or user-defined geometry.
-	// This field can only be modified immediately after the component is instantiated (e.g. using `AddComponent`).
-	// Once the backing layer has been created, changes won't be reflected unless the layer is disabled and enabled again.
+	/// <summary>
+	/// The type of the surface which passthrough textures are projected on: Automatic reconstruction or user-defined geometry.
+	/// This field can only be modified immediately after the component is instantiated (e.g. using `AddComponent`).
+	/// Once the backing layer has been created, changes won't be reflected unless the layer is disabled and enabled again.
+	/// Default is automatic reconstruction.
+	/// </summary>
 	public ProjectionSurfaceType projectionSurfaceType = ProjectionSurfaceType.Reconstructed;
 
-	// Overlay type: overlay | underlay | none
+	/// <summary>
+	/// Overlay type that defines the placement of the passthrough layer to appear on top as an overlay or beneath as an underlay of the application’s main projection layer. By default, the passthrough layer appears as an overlay.
+	/// </summary>
 	public OVROverlay.OverlayType overlayType = OVROverlay.OverlayType.Overlay;
 
-	// The compositionDepth defines the order of the layers in composition. The layer with smaller compositionDepth would be composited in the front of the layer with larger compositionDepth.
+	/// <summary>
+	/// The compositionDepth defines the order of the layers in composition. The layer with smaller compositionDepth would be composited in the front of the layer with larger compositionDepth. The default value is zero.
+
+	/// </summary>
 	public int compositionDepth = 0;
 
-	// Property that can hide layers when required. Should be false when present, true when hidden.
+	/// <summary>
+	/// Property that can hide layers when required. Should be false when present, true when hidden. By default, the value is set to false, which means the layers are present.
+
+	/// </summary>
 	public bool hidden = false;
 
-	// Specify whether `colorScale` and `colorOffset` should be applied to this layer.
+	/// <summary>
+	/// Specify whether `colorScale` and `colorOffset` should be applied to this layer. By default, the color scale and offset are not applied to the layer.
+	/// </summary>
 	public bool overridePerLayerColorScaleAndOffset = false;
 
-	// Color scale is a factor applied to the pixel color values during compositing. The four components of the vector correspond to the R, G, B, and A values.
+	/// <summary>
+	/// Color scale is a factor applied to the pixel color values during compositing.
+	/// The four components of the vector correspond to the R, G, B, and A values, default set to `{1,1,1,1}`.
+
+	/// </summary>
 	public Vector4 colorScale = Vector4.one;
 
-	// Color offset is a value which gets added to the pixel color values during compositing. The four components of the vector correspond to the R, G, B, and A values.
+	/// <summary>
+	/// Color offset is a value which gets added to the pixel color values during compositing.
+	/// The four components of the vector correspond to the R, G, B, and A values, default set to `{0,0,0,0}`.
+	/// </summary>
 	public Vector4 colorOffset = Vector4.zero;
 
-	// Add a GameObject to the Insight Passthrough projection surface. This is only applicable
-	// if the projection surface type is `UserDefined`.
-	// When `updateTransform` parameter is set to `true`, OVRPassthroughLayer will update the transform
-	// of the surface mesh every frame. Otherwise only the initial transform is recorded.
+	/// <summary>
+	/// Add a GameObject to the Insight Passthrough projection surface. This is only applicable
+	/// if the projection surface type is `UserDefined`.
+	/// When `updateTransform` parameter is set to `true`, OVRPassthroughLayer will update the transform
+	/// of the surface mesh every frame. Otherwise only the initial transform is recorded.
+	/// </summary>
+	/// <param name="obj">The Gameobject you want to add to the Insight Passthrough projection surface.</param>
+	/// <param name="updateTransform">Indicate if the transform should be updated every frame</param>
 	public void AddSurfaceGeometry(GameObject obj, bool updateTransform = false)
 	{
 		if (projectionSurfaceType != ProjectionSurfaceType.UserDefined)
@@ -73,7 +114,10 @@ public class OVRPassthroughLayer : MonoBehaviour
 			});
 	}
 
-	// Removes a GameObject that was previously added using `AddSurfaceGeometry` from the projection surface.
+	/// <summary>
+	/// Removes a GameObject that was previously added using `AddSurfaceGeometry` from the projection surface.
+	/// </summary>
+	/// <param name="obj">The Gameobject to remove. </param>
 	public void RemoveSurfaceGeometry(GameObject obj)
 	{
 		PassthroughMeshInstance passthroughMeshInstance;
@@ -99,12 +143,18 @@ public class OVRPassthroughLayer : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// Checks if the given gameobject is a surface geometry (If called with AddSurfaceGeometry).
+	/// </summary>
+	/// <returns> True if the gameobject is a surface geometry. </returns>
 	public bool IsSurfaceGeometry(GameObject obj)
 	{
 		return surfaceGameObjects.ContainsKey(obj) || deferredSurfaceGameObjects.Exists(x => x.gameObject == obj);
 	}
 
-	// Passthrough texture opacity
+	/// <summary>
+	/// Float that defines the passthrough texture opacity.
+	/// </summary>
 	public float textureOpacity
 	{
 		get
@@ -121,10 +171,11 @@ public class OVRPassthroughLayer : MonoBehaviour
 		}
 	}
 
-	// Edge rendering state. While the native API implicitly enables/disables edge rendering
-	// based on the color's alpha value, we use an explicit flag `edgeRenderingEnabled`
-	// in the Unity integration to be able to retain the previously selected color (incl. alpha)
-	// in the UI when it is disabled.
+	/// <summary>
+	/// Enable or disable the Edge rendering.
+	/// Use this flag to enable or disable the edge rendering but retain the previously selected color (incl. alpha)
+	/// in the UI when it is disabled.
+	/// </summary>
 	public bool edgeRenderingEnabled
 	{
 		get
@@ -141,6 +192,9 @@ public class OVRPassthroughLayer : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// Color for the edge rendering.
+	/// </summary>
 	public Color edgeColor
 	{
 		get
@@ -157,12 +211,12 @@ public class OVRPassthroughLayer : MonoBehaviour
 		}
 	}
 
-	// Color maps allow to recolor the camera images by specifying a color lookup table.
-	// Scripts should call the designated methods to set a color map. The fields and properties
-	// are only intended for the inspector UI.
-
-	// Specify the color map as an array of 256 color values which maps each grayscale input
-	// value to a color.
+	/// <summary>
+	/// This color map method allows to recolor the grayscale camera images by specifying a color lookup table.
+	/// Scripts should call the designated methods to set a color map. The fields and properties
+	/// are only intended for the inspector UI.
+	/// </summary>
+	/// <param name="values">The color map as an array of 256 color values to map each grayscale input to a color.</param>
 	public void SetColorMap(Color[] values)
 	{
 		if (values.Length != 256)
@@ -179,14 +233,15 @@ public class OVRPassthroughLayer : MonoBehaviour
 		styleDirty = true;
 	}
 
-	// Generate a color map from a set of color controls. Contrast, brightness and posterization is
-	// applied to the grayscale passthrough value, which is finally mapped to a color according to
-	// the provided gradient. The gradient can be null, in which case no colorization takes place.
-	// Parameters:
-	// - `contrast` values range from -1 to 1.
-	// - `brightness` values range from 0 to 1.
-	// - `posterize` values range from 0 to 1, where 0 = no posterization, 1 = reduce to two colors.
-	// - `gradient` is evaluated from 0 to 1.
+	/// <summary>
+	/// This method allows to generate a color map from a set of color controls. Contrast, brightness and posterization is
+	/// applied to the grayscale passthrough value, which is finally mapped to a color according to
+	/// the provided gradient. The gradient can be null, in which case no colorization takes place.
+	/// </summary>
+	/// <param name="contrast">The contrast value. Range from -1 (minimum) to 1 (maximum). </param>
+	/// <param name="brightness">The brightness value. Range from 0 (minimum) to 1 (maximum). </param>
+	/// <param name="posterize">The posterize value. Range from 0 to 1, where 0 = no posterization (no effect), 1 = reduce to two colors. </param>
+	/// <param name="gradient">The gradient will be evaluated from 0 (no intensity) to 1 (maximum intensity). </param>
 	public void SetColorMapControls(float contrast, float brightness = 0.0f, float posterize = 0.0f, Gradient gradient = null)
 	{
 		colorMapEditorType = ColorMapEditorType.Controls;
@@ -204,8 +259,11 @@ public class OVRPassthroughLayer : MonoBehaviour
 		}
 	}
 
-	// Specify the color map as an array of 256 8-bit intensity values which maps each grayscale
-	// input value to a grayscale output value.
+	/// <summary>
+	/// This method allows to specify the color map as an array of 256 8-bit intensity values.
+	/// Use this to map each grayscale input value to a grayscale output value.
+	/// </summary>
+	/// <param name="values">Array of 256 8-bit values.</param>
 	public void SetColorMapMonochromatic(byte[] values)
 	{
 		if (values.Length != 256)
@@ -219,7 +277,9 @@ public class OVRPassthroughLayer : MonoBehaviour
 		styleDirty = true;
 	}
 
-	// Disable color mapping.
+	/// <summary>
+	/// Disables color mapping. Use this to remove any effects.
+	/// </summary>
 	public void DisableColorMap()
 	{
 		colorMapEditorType = ColorMapEditorType.None;
@@ -229,15 +289,22 @@ public class OVRPassthroughLayer : MonoBehaviour
 
 
 	#region Editor Interface
+	/// <summary>
+	/// Unity editor enumerator to provide a dropdown in the inspector.
+	/// </summary>
 	public enum ColorMapEditorType
 	{
-		None,
-		Controls,
-		Custom
+		None, ///< Will clear the colormap
+		Controls, ///< Will update the colormap from the inspector controls
+		Custom ///< Will not update the colormap
 	}
 
 	[SerializeField]
 	private ColorMapEditorType colorMapEditorType_ = ColorMapEditorType.None;
+	/// <summary>
+	/// Editor attribute to get or set the selection in the inspector.
+	/// Using this selection will update the `colorMapType` and `colorMapData` if needed.
+	/// </summary>
 	public ColorMapEditorType colorMapEditorType
 	{
 		get
@@ -270,21 +337,33 @@ public class OVRPassthroughLayer : MonoBehaviour
 		}
 	}
 
-	// This field is not intended for public scripting use, call `SetPassthroughColorMapControls()` instead.
+	/// <summary>
+	/// This field is not intended for public scripting. Use `SetColorMapControls()` instead.
+	/// </summary>
 	public Gradient colorMapEditorGradient = CreateNeutralColorMapGradient();
-	// Keep a private copy of the gradient. Every frame, it is compared against the public one in UpdateColorMapFromControls() and updated if necessary.
+
+	// Keep a private copy of the gradient value. Every frame, it is compared against the public one in UpdateColorMapFromControls() and updated if necessary.
 	private Gradient colorMapEditorGradientOld = new Gradient();
 
-	// This field is not intended for public scripting use, call `SetPassthroughColorMapControls()` instead.
+	/// <summary>
+	/// This field is not intended for public scripting. Use `SetColorMapControls()` instead.
+	/// </summary>
 	public float colorMapEditorContrast;
+	// Keep a private copy of the contrast value. Every frame, it is compared against the public one in UpdateColorMapFromControls() and updated if necessary.
 	private float colorMapEditorContrast_ = 0;
 
-	// This field is not intended for public scripting use, call `SetPassthroughColorMapControls()` instead.
+	/// <summary>
+	/// This field is not intended for public scripting. Use `SetColorMapControls()` instead.
+	/// </summary>
 	public float colorMapEditorBrightness;
+	// Keep a private copy of the brightness value. Every frame, it is compared against the public one in UpdateColorMapFromControls() and updated if necessary.
 	private float colorMapEditorBrightness_ = 0;
 
-	// This field is not intended for public scripting use, call `SetPassthroughColorMapControls()` instead.
+	/// <summary>
+	/// This field is not intended for public scripting. Use `SetColorMapControls()` instead.
+	/// </summary>
 	public float colorMapEditorPosterize;
+	// Keep a private copy of the posterize value. Every frame, it is compared against the public one in UpdateColorMapFromControls() and updated if necessary.
 	private float colorMapEditorPosterize_ = 0;
 
 	#endregion
@@ -563,6 +642,14 @@ public class OVRPassthroughLayer : MonoBehaviour
 
 			passthroughOverlay.currentOverlayShape = overlayShape;
 		}
+
+		// Disable the overlay when passthrough is disabled as a whole so the layer doesn't get submitted.
+		// Both the desired (`isInsightPassthroughEnabled`) and the actual (IsInsightPassthroughInitialized()) PT
+		// initialization state are taken into account s.t. the overlay gets disabled as soon as PT is flagged to be
+		// disabled, and enabled only when PT is up and running again.
+		passthroughOverlay.enabled = OVRManager.instance != null &&
+			OVRManager.instance.isInsightPassthroughEnabled &&
+			OVRManager.IsInsightPassthroughInitialized();
 	}
 
 	#endregion

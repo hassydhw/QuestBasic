@@ -56,6 +56,8 @@ namespace Facebook.WitAi.Lib
         /// </summary>
         public int SampleDurationMS { get; private set; }
 
+        public bool IsInputAvailable => AudioClip;
+
         /// <summary>
         /// The length of the sample float array
         /// </summary>
@@ -214,6 +216,12 @@ namespace Facebook.WitAi.Lib
         /// </summary>
         public void StartRecording(int sampleLen = 10)
         {
+            if (!IsInputAvailable)
+            {
+                Debug.LogWarning("Tried to start recording when no input is available.");
+                return;
+            }
+
             StopRecording();
 
             if (!Microphone.IsRecording(CurrentDeviceName))
@@ -264,8 +272,8 @@ namespace Facebook.WitAi.Lib
         IEnumerator ReadRawAudio()
         {
             int loops = 0;
-            int readAbsPos = 0;
-            int prevPos = 0;
+            int readAbsPos = Microphone.GetPosition(CurrentDeviceName);
+            int prevPos = readAbsPos;
             float[] temp = new float[Sample.Length];
 
             while (AudioClip != null && Microphone.IsRecording(CurrentDeviceName) && IsRecording)

@@ -96,11 +96,12 @@ public class OVRGLTFLoader
 		m_glbStream = new MemoryStream(data, 0, data.Length, false, true);
 	}
 
-	public OVRGLTFScene LoadGLB()
+	public OVRGLTFScene LoadGLB(bool loadMips = true)
 	{
 		OVRGLTFScene scene = new OVRGLTFScene();
 		m_Nodes = new List<GameObject>();
 
+		int rootNodeId = 0;
 		if (ValidateGLB(m_glbStream))
 		{
 			byte[] jsonChunkData = ReadChunk(m_glbStream, OVRChunkType.JSON);
@@ -124,13 +125,13 @@ public class OVRGLTFLoader
 					m_Shader = Shader.Find("Legacy Shaders/Diffuse");
 				}
 
-				LoadGLTF();
+				rootNodeId = LoadGLTF(loadMips);
 			}
 		}
 		m_glbStream.Close();
 
 		scene.nodes = m_Nodes;
-		scene.root = m_Nodes[0];
+		scene.root = m_Nodes[rootNodeId];
 
 		scene.root.transform.Rotate(Vector3.up, 180.0f);
 
@@ -207,7 +208,7 @@ public class OVRGLTFLoader
 		return true;
 	}
 
-	private void LoadGLTF()
+	private int LoadGLTF(bool loadMips)
 	{
 		if (m_jsonData == null)
 		{
@@ -232,14 +233,15 @@ public class OVRGLTFLoader
 		// Limit loading to just the first scene in the glTF
 		var mainScene = scenes[0];
 		var rootNodes = mainScene["nodes"].AsArray;
-		for (int i = 0; i < rootNodes.Count; i++)
-		{
-			int nodeId = rootNodes[i].AsInt;
-			ProcessNode(m_jsonData["nodes"][nodeId], nodeId);
-		}
+
+		// Limit loading to first root node in the scene
+		int rootNodeId = rootNodes[0].AsInt;
+		ProcessNode(m_jsonData["nodes"][rootNodeId], rootNodeId, loadMips);
+
+		return rootNodeId;
 	}
 
-	private void ProcessNode(JSONNode node, int nodeId)
+	private void ProcessNode(JSONNode node, int nodeId, bool loadMips)
 	{
 		// Process the child nodes first
 		var childNodes = node["children"];
@@ -249,14 +251,21 @@ public class OVRGLTFLoader
 			{
 				int childId = childNodes[i].AsInt;
 				m_Nodes[childId].transform.SetParent(m_Nodes[nodeId].transform);
-				ProcessNode(m_jsonData["nodes"][childId], childId);
+				ProcessNode(m_jsonData["nodes"][childId], childId, loadMips);
 			}
+		}
+
+		string nodeName = node["name"].ToString();
+		if (nodeName.Contains("batteryIndicator"))
+		{
+			GameObject.Destroy(m_Nodes[nodeId]);
+			return;
 		}
 
 		if (node["mesh"] != null)
 		{
 			var meshId = node["mesh"].AsInt;
-			OVRMeshData meshData = ProcessMesh(m_jsonData["meshes"][meshId]);
+			OVRMeshData meshData = ProcessMesh(m_jsonData["meshes"][meshId], loadMips);
 
 			if (node["skin"] != null)
 			{
@@ -306,7 +315,7 @@ public class OVRGLTFLoader
 		}
 	}
 
-	private OVRMeshData ProcessMesh(JSONNode meshNode)
+	private OVRMeshData ProcessMesh(JSONNode meshNode, bool loadMips)
 	{
 		OVRMeshData meshData = new OVRMeshData();
 
@@ -475,7 +484,7 @@ public class OVRGLTFLoader
 		if (transcodeTask != null)
 		{
 			transcodeTask.Wait();
-			meshData.material = CreateUnityMaterial(matData);
+			meshData.material = CreateUnityMaterial(matData, loadMips);
 		}
 		return meshData;
 	}
@@ -604,14 +613,14 @@ public class OVRGLTFLoader
 		}
 	}
 
-	private Material CreateUnityMaterial(OVRMaterialData matData)
+	private Material CreateUnityMaterial(OVRMaterialData matData, bool loadMips)
 	{
 		Material mat = new Material(matData.shader);
 
 		if (matData.texture.format == OVRTextureFormat.KTX2)
 		{
 			Texture2D texture;
-			texture = new Texture2D(matData.texture.width, matData.texture.height, matData.texture.transcodedFormat, true);
+			texture = new Texture2D(matData.texture.width, matData.texture.height, matData.texture.transcodedFormat, loadMips);
 			texture.LoadRawTextureData(matData.texture.data);
 			texture.Apply(false, true);
 			mat.mainTexture = texture;

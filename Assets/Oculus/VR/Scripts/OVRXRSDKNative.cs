@@ -10,7 +10,7 @@ ANY KIND, either express or implied. See the License for the specific language g
 permissions and limitations under the License.
 ************************************************************************************/
 
-#if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
+#if USING_XR_MANAGEMENT && (USING_XR_SDK_OCULUS || USING_XR_SDK_OPENXR)
 #define USING_XR_SDK
 #endif
 
@@ -18,7 +18,7 @@ using System.Runtime.InteropServices;
 
 // C# wrapper for Unity XR SDK Native APIs.
 
-#if USING_XR_SDK
+#if USING_XR_SDK_OCULUS
 public static class OculusXRPlugin
 {
 	[DllImport("OculusXRPlugin")]

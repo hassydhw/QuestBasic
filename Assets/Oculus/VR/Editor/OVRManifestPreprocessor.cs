@@ -235,7 +235,10 @@ public class OVRManifestPreprocessor
 		// OVRProjectConfig.HandTrackingSupport.ControllersAndHands => manifest entry present and required=false
 		// OVRProjectConfig.HandTrackingSupport.HandsOnly => manifest entry present and required=true
 		OVRProjectConfig.HandTrackingSupport targetHandTrackingSupport = OVRProjectConfig.GetProjectConfig().handTrackingSupport;
+		OVRProjectConfig.HandTrackingVersion targetHandTrackingVersion = OVRProjectConfig.GetProjectConfig().handTrackingVersion;
 		bool handTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetHandTrackingSupport != OVRProjectConfig.HandTrackingSupport.ControllersOnly);
+		bool handTrackingVersionEntryNeeded = handTrackingEntryNeeded && (targetHandTrackingVersion != OVRProjectConfig.HandTrackingVersion.Default);
+		string handTrackingVersionValue = (targetHandTrackingVersion == OVRProjectConfig.HandTrackingVersion.V2) ? "V2.0" : "V1.0";
 
 		AddOrRemoveTag(doc,
 			androidNamespaceURI,
@@ -262,6 +265,15 @@ public class OVRManifestPreprocessor
 			modifyIfFound,
 			"value", projectConfig.handTrackingFrequency.ToString());
 
+		AddOrRemoveTag(doc,
+			androidNamespaceURI,
+			"/manifest/application",
+			"meta-data",
+			"com.oculus.handtracking.version",
+			handTrackingVersionEntryNeeded,
+			modifyIfFound,
+			"value", handTrackingVersionValue);
+
 		//============================================================================
 		// System Keyboard
 		AddOrRemoveTag(doc,
@@ -283,6 +295,19 @@ public class OVRManifestPreprocessor
 			projectConfig.experimentalFeaturesEnabled,
 			modifyIfFound,
 			"required", "true");
+
+		//============================================================================
+		// Spatial Anchors
+		OVRProjectConfig.SpatialAnchorsSupport targetSpatialAnchorsSupport = OVRProjectConfig.GetProjectConfig().spatialAnchorsSupport;
+		bool spatialAnchorsEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetSpatialAnchorsSupport == OVRProjectConfig.SpatialAnchorsSupport.Enabled);
+
+		AddOrRemoveTag(doc,
+			androidNamespaceURI,
+			"/manifest",
+			"uses-permission",
+			"com.oculus.permission.USE_ANCHOR_API",
+			spatialAnchorsEntryNeeded,
+			modifyIfFound);
 
 		//============================================================================
 		// Passthrough
@@ -317,6 +342,52 @@ public class OVRManifestPreprocessor
 				modifyIfFound,
 				"value", ColorSpaceToManifestTag(runtimeSettings.colorSpace));
 		}
+
+		//============================================================================
+		// Render Model
+		OVRProjectConfig.RenderModelSupport renderModelSupport = OVRProjectConfig.GetProjectConfig().renderModelSupport;
+		bool renderModelEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (renderModelSupport == OVRProjectConfig.RenderModelSupport.Enabled);
+
+		AddOrRemoveTag(doc,
+			androidNamespaceURI,
+			"/manifest",
+			"uses-feature",
+			"com.oculus.feature.RENDER_MODEL",
+			renderModelEntryNeeded,
+			modifyIfFound);
+		AddOrRemoveTag(doc,
+			androidNamespaceURI,
+			"/manifest",
+			"uses-permission",
+			"com.oculus.permission.RENDER_MODEL",
+			renderModelEntryNeeded,
+			modifyIfFound);
+
+		//============================================================================
+		// Tracked Keyboard
+		// If Quest is the target device, add the tracked keyboard manifest tags if needed
+		// Mapping of project setting to manifest setting:
+		// OVRProjectConfig.TrackedKeyboardSupport.None => manifest entry not present
+		// OVRProjectConfig.TrackedKeyboardSupport.Supported => manifest entry present and required=false
+		// OVRProjectConfig.TrackedKeyboardSupport.Required => manifest entry present and required=true
+		OVRProjectConfig.TrackedKeyboardSupport targetTrackedKeyboardSupport = OVRProjectConfig.GetProjectConfig().trackedKeyboardSupport;
+		bool trackedKeyboardEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetTrackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None);
+		
+		AddOrRemoveTag(doc,
+			androidNamespaceURI,
+			"/manifest",
+			"uses-feature",
+			"oculus.software.trackedkeyboard",
+			trackedKeyboardEntryNeeded,
+			modifyIfFound,
+			"required", (targetTrackedKeyboardSupport == OVRProjectConfig.TrackedKeyboardSupport.Required) ? "true" : "false");
+		AddOrRemoveTag(doc,
+			androidNamespaceURI,
+			"/manifest",
+			"uses-permission",
+			"com.oculus.permission.TRACKED_KEYBOARD",
+			trackedKeyboardEntryNeeded,
+		modifyIfFound);
 	}
 
 
