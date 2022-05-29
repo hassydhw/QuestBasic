@@ -23,7 +23,7 @@ OculusQuest向けの基本的なサンプル、Gaze/Laser/コントローラ入�
     アセットストアのリンク  
 <https://assetstore.unity.com/packages/tools/integration/oculus-integration-82022>
 
-  プロジェクト内に同梱しています
+  プロジェクト内に同梱しておりません、上記リンクから追加して下さい。
 
 ## 各シーンの概要
 各シーンそれぞれ一つの機能しかないため理解しやすいと思います 
@@ -50,5 +50,3 @@ Oculus Integrationの中は現在作り変えられており、今後はOpenXR�
 * Githubからクローンする場合  
 git clone https://github.com/hassydhw/OculusGoBasics.git
 
-## ビルド時にエラーが出る場合
-Oculusフォルダを削除し（Oculus Integrationがはいっているフォルダ）、アセットストアから、Oculus Ingegrationをダウンロードして取り込みなおしてみてください。
