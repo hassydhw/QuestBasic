@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class StickMove : MonoBehaviour
 {
@@ -45,10 +45,9 @@ public class StickMove : MonoBehaviour
                 //左回りに回転
                 moveTargetObj.transform.Rotate(0, -rotationSpeed * Time.deltaTime, 0);
             }
-            //if (touchPadPt.y < -0.5 && -0.5 < touchPadPt.x && touchPadPt.x < 0.5)
+            //if (myStickValue.y < -0.5 && -0.5 < myStickValue.x && myStickValue.x < 0.5)
             //{
             //    //下方向
-            //    dpadInputMesh.text = "down";
             //    //今回は移動には使わない、後退するという実装もありかも
             //}
 
